@@ -6,96 +6,193 @@
 <title>DPFO Typ B 2025 – Helwitax</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
   :root {
-    --bg:#0f1117; --surface:#1a1d27; --surface2:#232635; --border:#2e3247;
-    --accent:#4f8ef7; --accent2:#7c5cbf; --green:#3ecf8e; --red:#f75f5f;
-    --yellow:#f7c948; --text:#e2e6f0; --muted:#6b7394;
-    --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+    --purple:    #321941;
+    --purple2:   #3C1E46;
+    --green:     #AFFA96;
+    --green2:    #CDFFB4;
+    --black:     #000000;
+    --white:     #ffffff;
+    --bg:        #f7f6f9;
+    --surface:   #ffffff;
+    --surface2:  #f2f0f5;
+    --border:    #e4dff0;
+    --text:      #321941;
+    --muted:     #7a6b90;
+    --sans: 'Cabinet Grotesk', sans-serif;
+    --mono: 'Cabinet Grotesk', sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:14px}
-  header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-  .logo{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
-  .logo span{color:var(--muted)}
-  .badge{font-family:var(--mono);font-size:11px;background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.3);color:var(--accent);padding:3px 10px;border-radius:3px;letter-spacing:.05em}
-  .container{max-width:920px;margin:0 auto;padding:32px 24px 80px}
-  h1{font-size:22px;font-weight:600;margin-bottom:4px;letter-spacing:-.01em}
-  .subtitle{color:var(--muted);font-size:13px;margin-bottom:32px;font-family:var(--mono)}
-  .steps{display:flex;gap:0;margin-bottom:32px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
-  .step{flex:1;padding:12px 8px;background:var(--surface);border-right:1px solid var(--border);cursor:pointer;transition:background .15s;text-align:center}
+
+  /* ── HEADER ── */
+  header{
+    background:var(--purple);
+    padding:0 40px;
+    height:64px;
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:100;
+  }
+  .logo-wrap{display:flex;align-items:center;gap:14px}
+  .logo-svg{height:28px;width:auto}
+  .logo-divider{width:1px;height:24px;background:rgba(175,250,150,.25)}
+  .logo-label{font-size:12px;font-weight:500;color:rgba(175,250,150,.7);letter-spacing:.06em;text-transform:uppercase}
+  .badge{
+    font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    background:var(--green);color:var(--purple);
+    padding:4px 12px;border-radius:20px;
+  }
+
+  /* ── CONTAINER ── */
+  .container{max-width:940px;margin:0 auto;padding:40px 24px 100px}
+  h1{font-size:28px;font-weight:800;color:var(--purple);margin-bottom:4px;letter-spacing:-.02em}
+  .subtitle{color:var(--muted);font-size:13px;margin-bottom:36px;font-weight:400}
+
+  /* ── STEPS ── */
+  .steps{display:flex;gap:0;margin-bottom:32px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(50,25,65,.06)}
+  .step{flex:1;padding:14px 8px;background:transparent;border-right:1px solid var(--border);cursor:pointer;transition:background .15s;text-align:center}
   .step:last-child{border-right:none}
-  .step.active{background:rgba(79,142,247,.1);border-bottom:2px solid var(--accent)}
-  .step.done{background:rgba(62,207,142,.06)}
-  .step-num{font-family:var(--mono);font-size:10px;color:var(--muted);display:block;margin-bottom:2px}
-  .step-label{font-size:12px;font-weight:500;color:var(--text)}
-  .step.active .step-label{color:var(--accent)}
-  .step.done .step-label{color:var(--green)}
-  .section{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:20px;overflow:hidden}
-  .section-header{padding:14px 20px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-  .section-tag{font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--bg);padding:2px 7px;border-radius:3px;border:1px solid var(--border)}
-  .section-title{font-size:13px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--text)}
-  .section-body{padding:20px}
+  .step.active{background:var(--purple);border-bottom:none}
+  .step.done{background:rgba(175,250,150,.12)}
+  .step-num{font-size:10px;font-weight:700;color:var(--muted);display:block;margin-bottom:2px;letter-spacing:.06em}
+  .step-label{font-size:12px;font-weight:600;color:var(--text)}
+  .step.active .step-num{color:rgba(175,250,150,.6)}
+  .step.active .step-label{color:var(--green)}
+  .step.done .step-num{color:#7a6b90}
+  .step.done .step-label{color:#321941}
+
+  /* ── SECTIONS ── */
+  .section{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;margin-bottom:20px;overflow:hidden;box-shadow:0 2px 8px rgba(50,25,65,.05)}
+  .section-header{padding:14px 22px;background:var(--surface2);border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:10px}
+  .section-tag{font-size:10px;font-weight:800;color:var(--purple);background:var(--green);padding:3px 9px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase}
+  .section-title{font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--purple)}
+  .section-body{padding:22px}
+
+  /* ── GRID / FIELDS ── */
   .grid{display:grid;gap:16px}
   .grid-2{grid-template-columns:1fr 1fr}
   .grid-3{grid-template-columns:1fr 1fr 1fr}
-  .field{display:flex;flex-direction:column;gap:5px}
-  label{font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase}
-  input,select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:5px;font-family:var(--sans);font-size:13px;transition:border-color .15s;width:100%}
-  input:focus,select:focus{outline:none;border-color:var(--accent)}
-  input[type="number"]{font-family:var(--mono)}
+  .field{display:flex;flex-direction:column;gap:6px}
+  label{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  input,select{
+    background:var(--bg);border:1.5px solid var(--border);color:var(--text);
+    padding:10px 13px;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:500;
+    transition:border-color .15s,box-shadow .15s;width:100%;
+  }
+  input:focus,select:focus{outline:none;border-color:var(--purple);box-shadow:0 0 0 3px rgba(50,25,65,.08)}
   .field-note{font-size:11px;color:var(--muted);font-style:italic}
   .radio-group{display:flex;gap:8px;flex-wrap:wrap}
-  .radio-opt{display:flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:13px;transition:all .15s;background:var(--bg)}
+  .radio-opt{
+    display:flex;align-items:center;gap:7px;padding:8px 15px;
+    border:1.5px solid var(--border);border-radius:8px;cursor:pointer;
+    font-size:13px;font-weight:500;transition:all .15s;background:var(--bg);
+  }
   .radio-opt input{width:auto}
-  .radio-opt:has(input:checked){border-color:var(--accent);background:rgba(79,142,247,.1);color:var(--accent)}
-  .divider{border:none;border-top:1px solid var(--border);margin:16px 0}
-  .computed-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--bg);border-radius:5px;border:1px solid var(--border);margin-top:8px}
-  .computed-label{font-size:12px;color:var(--muted);font-family:var(--mono)}
-  .computed-value{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--green)}
-  .computed-value.highlight{color:var(--yellow);font-size:18px}
+  .radio-opt:has(input:checked){border-color:var(--purple);background:rgba(50,25,65,.06);color:var(--purple)}
+  .divider{border:none;border-top:1.5px solid var(--border);margin:16px 0}
+  .computed-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:11px 16px;background:var(--surface2);border-radius:8px;
+    border:1.5px solid var(--border);margin-top:8px;
+  }
+  .computed-label{font-size:12px;color:var(--muted);font-weight:600}
+  .computed-value{font-size:15px;font-weight:800;color:var(--purple)}
+  .computed-value.highlight{color:var(--purple);font-size:20px;font-weight:800}
+
+  /* ── PAGES ── */
   .page{display:none}
   .page.active{display:block}
+
+  /* ── SUMMARY TABLE ── */
   .sum-table{width:100%;border-collapse:collapse}
   .sum-table tr{border-bottom:1px solid var(--border)}
   .sum-table tr:last-child{border-bottom:none}
-  .sum-table td{padding:10px 16px;font-size:13px}
-  .sum-table td:first-child{color:var(--muted);font-family:var(--mono);font-size:11px;width:80px}
-  .sum-table td:last-child{text-align:right;font-family:var(--mono);font-weight:600}
-  .sum-table .total td{color:var(--yellow);font-size:15px}
-  .sum-table .section-sep td{background:var(--surface2);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:6px 16px}
+  .sum-table td{padding:11px 16px;font-size:13px}
+  .sum-table td:first-child{color:var(--muted);font-size:10px;font-weight:700;width:70px;letter-spacing:.04em}
+  .sum-table td:last-child{text-align:right;font-weight:700}
+  .sum-table .total td{color:var(--purple);font-size:16px;font-weight:800;background:rgba(175,250,150,.18)}
+  .sum-table .section-sep td{background:var(--surface2);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:7px 16px;font-weight:800}
+
+  /* ── BUTTONS ── */
   .btn-row{display:flex;gap:12px;margin-top:28px;justify-content:flex-end}
-  .btn{padding:10px 24px;border-radius:5px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:var(--sans);transition:all .15s;letter-spacing:.02em}
-  .btn-primary{background:var(--accent);color:#fff}
-  .btn-primary:hover{background:#6a9ff8}
-  .btn-secondary{background:transparent;border:1px solid var(--border);color:var(--text)}
-  .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
-  .btn-green{background:var(--green);color:#0f1117}
-  .btn-green:hover{background:#52e0a0}
-  .btn-purple{background:var(--accent2);color:#fff}
-  .info-box{padding:12px 16px;background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.25);border-radius:5px;font-size:12px;color:#8ab5f8;line-height:1.6;margin-bottom:16px}
-  .warn-box{padding:12px 16px;background:rgba(247,201,72,.08);border:1px solid rgba(247,201,72,.25);border-radius:5px;font-size:12px;color:var(--yellow);line-height:1.6;margin-top:12px}
-  .xml-output{background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:16px;font-family:var(--mono);font-size:11px;color:#8ab5f8;overflow-x:auto;white-space:pre;max-height:400px;overflow-y:auto;line-height:1.7}
-  .sub-header{margin:0 -20px;padding:10px 20px}
+  .btn{padding:11px 26px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:var(--sans);transition:all .15s;letter-spacing:.02em}
+  .btn-primary{background:var(--purple);color:#fff}
+  .btn-primary:hover{background:var(--purple2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(50,25,65,.25)}
+  .btn-secondary{background:transparent;border:1.5px solid var(--border);color:var(--text)}
+  .btn-secondary:hover{border-color:var(--purple);color:var(--purple)}
+  .btn-green{background:var(--green);color:var(--purple)}
+  .btn-green:hover{background:var(--green2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(175,250,150,.4)}
+  .btn-purple{background:var(--purple2);color:#fff}
+  .btn-purple:hover{background:var(--purple);transform:translateY(-1px)}
+
+  /* ── INFO BOXES ── */
+  .info-box{padding:13px 16px;background:rgba(175,250,150,.15);border:1.5px solid rgba(175,250,150,.5);border-radius:8px;font-size:12px;color:var(--purple);line-height:1.6;margin-bottom:16px;font-weight:500}
+  .warn-box{padding:13px 16px;background:rgba(50,25,65,.06);border:1.5px solid rgba(50,25,65,.2);border-radius:8px;font-size:12px;color:var(--purple);line-height:1.6;margin-top:12px;font-weight:500}
+
+  /* ── XML OUTPUT ── */
+  .xml-output{
+    background:var(--purple);border-radius:10px;padding:18px;
+    font-family:monospace;font-size:11px;color:var(--green);
+    overflow-x:auto;white-space:pre;max-height:400px;overflow-y:auto;line-height:1.7;
+  }
+
+  .sub-header{margin:0 -22px;padding:10px 22px}
+
+  /* ── PAGE TITLE AREA ── */
+  .page-hero{
+    background:var(--purple);border-radius:12px;padding:28px 32px;margin-bottom:24px;
+    position:relative;overflow:hidden;
+  }
+  .page-hero::before{
+    content:'';position:absolute;right:-60px;top:-60px;
+    width:220px;height:220px;
+    background:radial-gradient(circle, rgba(175,250,150,.15) 0%, transparent 70%);
+  }
+  .page-hero h1{color:#fff;font-size:24px;font-weight:800;margin-bottom:4px}
+  .page-hero .subtitle{color:rgba(175,250,150,.7);font-size:13px;margin-bottom:0}
+
   @media(max-width:640px){
     .grid-2,.grid-3{grid-template-columns:1fr}
-    header{padding:12px 16px}
+    header{padding:0 16px}
     .container{padding:20px 16px 60px}
     .steps{flex-direction:column}
     .step{border-right:none;border-bottom:1px solid var(--border)}
+    .page-hero{padding:20px}
+    .page-hero h1{font-size:20px}
   }
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">Helwitax <span>/</span> DPFO-B</div>
-  <div class="badge">DPFOBv25 · ZO 2025</div>
+  <div class="logo-wrap">
+    <!-- Helwitax logomark SVG (inline, zelená verzia) -->
+    <svg class="logo-svg" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- h - custom path s motívom cesty -->
+      <path d="M4 36V4h6v13c2-2 5-3 8-3 6 0 10 4 10 11v11h-6V26c0-4-2-6-5-6s-7 2-7 7v9H4z" fill="#AFFA96"/>
+      <!-- e -->
+      <path d="M36 24h14c0-4-2-6-7-6-4 0-7 2-7 6zm14 4H36c0 4 3 6 7 6 3 0 5-1 6-3l5 2c-2 4-6 6-11 6-8 0-13-5-13-12s5-12 13-12c7 0 12 5 12 12v1z" fill="#AFFA96"/>
+      <!-- l -->
+      <path d="M66 36V4h6v32h-6z" fill="#AFFA96"/>
+      <!-- w -->
+      <path d="M76 15h6l5 14 5-14h6l-8 21h-6l-8-21z" fill="#AFFA96"/>
+      <!-- i -->
+      <path d="M100 15h6v21h-6V15zm0-9h6v5h-6V6z" fill="#AFFA96"/>
+      <!-- t -->
+      <path d="M110 8h6v7h5v5h-5v10c0 2 1 3 3 3h2v5h-3c-5 0-8-3-8-8V20h-3v-5h3V8z" fill="#AFFA96"/>
+    </svg>
+    <div class="logo-divider"></div>
+    <div class="logo-label">DPFO Typ B</div>
+  </div>
+  <div class="badge">ZO 2025</div>
 </header>
 
 <div class="container">
-  <h1>Daňové priznanie – Typ B</h1>
-  <div class="subtitle">Zdaňovacie obdobie 2025 · Tlačivo MF/012186/2025-721</div>
+  <div class="page-hero">
+    <h1>Daňové priznanie – Typ B</h1>
+    <div class="subtitle">Zdaňovacie obdobie 2025 · Tlačivo MF/012186/2025-721</div>
+  </div>
 
   <div class="steps">
     <div class="step active" onclick="goPage(0)"><span class="step-num">01</span><span class="step-label">Daňovník</span></div>
@@ -403,7 +500,15 @@
     </div>
 
     <div class="section">
-      <div class="section-header"><span class="section-tag">XML</span><span class="section-title">Exportný súbor pre eDane / PFS (DPFOBv25)</span></div>
+      <div class="section-header"><span class="section-tag">r.154</span><span class="section-title">Počet príloh</span></div>
+      <div class="section-body">
+        <div class="info-box">Pre štandardné DPFO Typ B je počet príloh <strong>6</strong> (prílohy č. 1–4 sú vždy súčasťou). Ak prikladáte ďalšie prílohy, upravte číslo.</div>
+        <div class="field" style="max-width:200px">
+          <label>Počet príloh (r.154)</label>
+          <input type="number" id="r154_pocet" value="6" min="6" max="99" step="1">
+        </div>
+      </div>
+    </div>
       <div class="section-body">
         <div class="info-box">Vygenerovaný XML súbor je kompatibilný so schémou <strong>DPFOBv25</strong>. Nahrajte ho priamo na Portál finančnej správy alebo do aplikácie eDane.</div>
         <div class="xml-output" id="xmlOut">— generuje sa automaticky —</div>
@@ -691,6 +796,7 @@ function buildXML() {
   const ddp = druhDP==='DDP'?'1':'0';
 
   const getVal = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const r154 = parseInt(getVal('r154_pocet')) || 6;
   const asigPerc = parseFloat(getVal('asig_percento')) || 0;
   const asigIco  = getVal('asig_ico').trim();
   const asigNazov= getVal('asig_nazov').trim();
@@ -978,7 +1084,7 @@ function buildXML() {
 \t\t<rekreaciaSuma></rekreaciaSuma>
 \t\t<zaznamy><![CDATA[]]></zaznamy>
 \t</osobitneZaznamy>
-\t<r154>4</r154>
+\t<r154>${r154}</r154>
 \t<datumVyhlasenia>${datumVyhl}</datumVyhlasenia>
 \t<danovyPreplatokBonus>
 \t\t<vyplatitDanovyBonus>0</vyplatitDanovyBonus>
