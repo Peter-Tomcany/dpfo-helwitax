@@ -480,15 +480,35 @@ function calc() {
   const nczd_manzel = v('nczd_manzel');
   const celk_nczd = nczd_dankovnik_suma + iii + nczd_manzel;
 
-  // ZD po NČZD – NČZD sa odpočítava od §5 najprv, potom §6
-  let zd_5_po_nczd = Math.max(0, czd_5 - celk_nczd);
-  let nczd_zostatok = Math.max(0, celk_nczd - czd_5);
-  let zd_6_po_nczd = Math.max(0, czd_6 - nczd_zostatok);
-  const zd_po_nczd = zd_5_po_nczd + zd_6_po_nczd;
+  // ——— NČZD sa odpočítava najprv od §5, zvyšok od §6 ods.1+2 (§11 ods.12) ———
+  let nczd_zostatok_pre_5 = celk_nczd;
+  let zd_5_po_nczd = Math.max(0, czd_5 - nczd_zostatok_pre_5);
+  let nczd_zostatok_pre_6 = Math.max(0, celk_nczd - czd_5);
+  let zd_6_po_nczd = Math.max(0, czd_6 - nczd_zostatok_pre_6);
 
-  // Daň 2025: 19% do 41 445,46 €, 25% nad
-  const PASOM1 = 41445.46;
-  let dan = zd_po_nczd <= PASOM1 ? zd_po_nczd*0.19 : PASOM1*0.19 + (zd_po_nczd-PASOM1)*0.25;
+  // ——— §4 ods.1 písm. a): ZD = §5 po NČZD → sadzba 19%/25% (hranica 48 441,43 €) ———
+  const PASOM_A = 48441.43;
+  const zd_a = zd_5_po_nczd; // §5 po NČZD (§6 ods.3+4 a §8 tu nemáme)
+  let dan_a = zd_a <= PASOM_A ? zd_a * 0.19 : PASOM_A * 0.19 + (zd_a - PASOM_A) * 0.25;
+
+  // ——— §4 ods.1 písm. b): ZD = §6 ods.1+2 po NČZD → sadzba 15% ak príjmy ≤ 100 000 €, inak 19%/25% ———
+  const zd_b = zd_6_po_nczd;
+  let dan_b;
+  if (celk_prijmy_6 <= 100000) {
+    dan_b = zd_b * 0.15; // mikrodaňovník / príjmy do 100 000 €
+  } else {
+    dan_b = zd_b <= PASOM_A ? zd_b * 0.19 : PASOM_A * 0.19 + (zd_b - PASOM_A) * 0.25;
+  }
+
+  const dan = dan_a + dan_b;
+  // Celkový ZD pre zobrazenie v súhrne
+  const zd_po_nczd = zd_a + zd_b;
+  const sadzba_b = celk_prijmy_6 <= 100000 ? '15%' : '19%/25%';
+  C.sadzba_b = sadzba_b;
+  C.dan_a = dan_a;
+  C.dan_b = dan_b;
+  C.zd_a = zd_a;
+  C.zd_b = zd_b;
 
   // Daňový bonus – limitovaný na 55% úhrnu aktívnych ZD (§5+§6 ods.1+2)
   const mes = Math.min(12, Math.max(1, parseInt(v('bonus_mesiacov'))||12));
@@ -527,10 +547,13 @@ function calc() {
   const r2 = document.getElementById('vysledok_odpcty');
   if(r2) r2.innerHTML = `
     <div class="computed-row"><span class="computed-label">ČZD §5</span><span class="computed-value">${fmt(czd_5)}</span></div>
-    <div class="computed-row"><span class="computed-label">ČZD §6</span><span class="computed-value">${fmt(czd_6)}</span></div>
+    <div class="computed-row"><span class="computed-label">ČZD §6 ods.1+2</span><span class="computed-value">${fmt(czd_6)}</span></div>
     <div class="computed-row"><span class="computed-label">NČZD celkom</span><span class="computed-value">${fmt(celk_nczd)}</span></div>
-    <div class="computed-row"><span class="computed-label">Základ dane po odpočtoch</span><span class="computed-value">${fmt(zd_po_nczd)}</span></div>
-    <div class="computed-row"><span class="computed-label">Daň (pred bonusom)</span><span class="computed-value">${fmt(dan)}</span></div>
+    <div class="computed-row"><span class="computed-label">ZD §4a (§5) po NČZD → 19%/25%</span><span class="computed-value">${fmt(zd_a)}</span></div>
+    <div class="computed-row"><span class="computed-label">ZD §4b (§6 ods.1+2) po NČZD → ${sadzba_b}</span><span class="computed-value">${fmt(zd_b)}</span></div>
+    <div class="computed-row"><span class="computed-label">Daň §4a (r.81)</span><span class="computed-value">${fmt(dan_a)}</span></div>
+    <div class="computed-row"><span class="computed-label">Daň §4b (r.96)</span><span class="computed-value">${fmt(dan_b)}</span></div>
+    <div class="computed-row"><span class="computed-label">Daň spolu (r.105)</span><span class="computed-value">${fmt(dan)}</span></div>
     <div class="computed-row"><span class="computed-label">Daňový bonus na deti</span><span class="computed-value">${fmt(bonus)}</span></div>
     <div class="computed-row"><span class="computed-label">Daň po bonuse</span><span class="computed-value">${fmt(dan_po_bonuse)}</span></div>
     <div class="computed-row"><span class="computed-label">Zrazené preddavky §5</span><span class="computed-value">${fmt(celk_pred5)}</span></div>
@@ -561,14 +584,17 @@ function buildSummary() {
     <tr><td>r.31</td><td>NČZD na manžel/ku</td><td>${fmt(C.nczd_manzel)}</td></tr>
     <tr><td></td><td>III. pilier (max 180 €)</td><td>${fmt(C.iii)}</td></tr>
     <tr class="section-sep"><td colspan="3">Výpočet dane</td></tr>
-    <tr><td>r.80</td><td>Základ dane po odpočtoch</td><td>${fmt(C.zd_po_nczd)}</td></tr>
-    <tr><td>r.105</td><td>Daň (19% / 25%)</td><td>${fmt(C.dan)}</td></tr>
+    <tr><td>r.78</td><td>ZD §4a (§5 po NČZD) → 19%/25%</td><td>${fmt(C.zd_a)}</td></tr>
+    <tr><td>r.81</td><td>Daň zo ZD §4a</td><td>${fmt(C.dan_a)}</td></tr>
+    <tr><td>r.92</td><td>ZD §4b (§6 ods.1+2 po NČZD) → ${C.sadzba_b}</td><td>${fmt(C.zd_b)}</td></tr>
+    <tr><td>r.96</td><td>Daň zo ZD §4b</td><td>${fmt(C.dan_b)}</td></tr>
+    <tr><td>r.105</td><td>Daň spolu (r.81 + r.96 + r.90)</td><td>${fmt(C.dan)}</td></tr>
     <tr><td>r.107</td><td>Daňový bonus na deti</td><td>−${fmt(C.bonus)}</td></tr>
     <tr><td></td><td>Daň po bonuse</td><td>${fmt(C.dan_po_bonuse)}</td></tr>
     <tr><td>r.112</td><td>Zrazené preddavky §5</td><td>−${fmt(C.celk_pred5)}</td></tr>
     ${C.dan_na_uhradu > 0
-      ? `<tr class="total"><td>r.125</td><td><strong>DAŇ NA ÚHRADU</strong></td><td>${fmt(C.dan_na_uhradu)}</td></tr>`
-      : `<tr class="total"><td>r.130</td><td><strong>DAŇOVÝ PREPLATOK</strong></td><td>${fmt(C.preplatok)}</td></tr>`
+      ? `<tr class="total"><td>r.135</td><td><strong>DAŇ NA ÚHRADU</strong></td><td>${fmt(C.dan_na_uhradu)}</td></tr>`
+      : `<tr class="total"><td>r.136</td><td><strong>DAŇOVÝ PREPLATOK</strong></td><td>${fmt(C.preplatok)}</td></tr>`
     }
   `;
   generateXMLPreview();
@@ -648,7 +674,10 @@ function buildXML() {
     <CelkoveNCZD>${n2(C.celk_nczd)}</CelkoveNCZD>
   </IXOddiel>
   <XIIIOddiel>
-    <r80_ZakladDane>${n2(C.zd_po_nczd)}</r80_ZakladDane>
+    <r78_ZD_par4a>${n2(C.zd_a)}</r78_ZD_par4a>
+    <r81_Dan_par4a>${n2(C.dan_a)}</r81_Dan_par4a>
+    <r92_ZD_par4b>${n2(C.zd_b)}</r92_ZD_par4b>
+    <r96_Dan_par4b>${n2(C.dan_b)}</r96_Dan_par4b>
     <r105_Dan>${n2(C.dan)}</r105_Dan>
     <r107_DanovyBonus>${n2(C.bonus)}</r107_DanovyBonus>
     <r108_DanPoBonuse>${n2(C.dan_po_bonuse)}</r108_DanPoBonuse>
@@ -714,11 +743,14 @@ function generatePDF() {
     ['NČZD na manžel/ku (r.31)',fmt(C.nczd_manzel),false],
     ['III. pilier (max 180 €)',fmt(C.iii),false],
     ['VÝPOČET DANE','',true],
-    ['Základ dane po odpočtoch (r.80)',fmt(C.zd_po_nczd),true],
-    ['Daň 19%/25% (r.105)',fmt(C.dan),false],
-    ['Daňový bonus na deti (r.107)','−'+fmt(C.bonus),false],
-    ['Zrazené preddavky §5 (r.112)','−'+fmt(C.celk_pred5),false],
-    [C.dan_na_uhradu>0?'DAŇ NA ÚHRADU (r.125)':'DAŇOVÝ PREPLATOK (r.130)',
+    ['ZD §4a (§5 po NČZD) – r.78',fmt(C.zd_a),false],
+    ['Daň §4a 19%/25% – r.81',fmt(C.dan_a),false],
+    ['ZD §4b (§6 ods.1+2 po NČZD) – r.92',fmt(C.zd_b),false],
+    [`Daň §4b ${C.sadzba_b} – r.96`,fmt(C.dan_b),false],
+    ['Daň spolu – r.105',fmt(C.dan),true],
+    ['Daňový bonus na deti – r.107','−'+fmt(C.bonus),false],
+    ['Zrazené preddavky §5 – r.112','−'+fmt(C.celk_pred5),false],
+    [C.dan_na_uhradu>0?'DAŇ NA ÚHRADU (r.135)':'DAŇOVÝ PREPLATOK (r.136)',
      C.dan_na_uhradu>0?fmt(C.dan_na_uhradu):fmt(C.preplatok),true],
   ];
 
