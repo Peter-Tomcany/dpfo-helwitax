@@ -130,12 +130,13 @@
           <div class="field"><label>Štát rezidencie</label><input type="text" id="stat" value="SR"></div>
         </div>
         <hr class="divider">
-        <div class="grid grid-2" style="margin-bottom:16px">
-          <div class="field"><label>Ulica a číslo (r.07)</label><input type="text" id="ulica" placeholder="Dlhá 10"></div>
-          <div class="field"><label>PSČ</label><input type="text" id="psc" placeholder="81101"></div>
+        <div class="grid grid-3" style="margin-bottom:16px">
+          <div class="field" style="grid-column:span 2"><label>Ulica (r.07)</label><input type="text" id="ulica" placeholder="Športovcov"></div>
+          <div class="field"><label>Súpisné/orient. číslo (r.08)</label><input type="text" id="cislo" placeholder="488/15"></div>
         </div>
-        <div class="grid grid-2" style="margin-bottom:16px">
-          <div class="field"><label>Obec (r.08)</label><input type="text" id="obec" placeholder="Bratislava"></div>
+        <div class="grid grid-3" style="margin-bottom:16px">
+          <div class="field"><label>PSČ (r.09)</label><input type="text" id="psc" placeholder="91441"></div>
+          <div class="field"><label>Obec (r.10)</label><input type="text" id="obec" placeholder="Nemšová"></div>
           <div class="field"><label>Telefón (r.27)</label><input type="text" id="telefon" placeholder="+421 900 000 000"></div>
         </div>
         <div class="field"><label>E-mail (r.28)</label><input type="email" id="email" placeholder="jan@novak.sk"></div>
@@ -365,6 +366,42 @@
       <div class="section-header"><span class="section-tag">VÝPOČET</span><span class="section-title">Súhrn a výsledná daňová povinnosť</span></div>
       <div class="section-body"><table class="sum-table" id="sumTable"></table></div>
     </div>
+
+    <div class="section">
+      <div class="section-header"><span class="section-tag">§50</span><span class="section-title">Asignácia dane (2 % / 3 %)</span></div>
+      <div class="section-body">
+        <div class="info-box">Môžete poukázať <strong>2 %</strong> (alebo <strong>3 %</strong> ak ste odpracovali min. 40 hodín dobrovoľníctva) zo zaplatenej dane prijímateľovi z registra Notárskej komory SR.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div class="field">
+            <label>Percento asignácie</label>
+            <select id="asig_percento" oninput="calcAsig()">
+              <option value="0">— neuplatňujem §50 —</option>
+              <option value="2">2 % zo zaplatenej dane</option>
+              <option value="3">3 % (dobrovoľník – min. 40 hod.)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>IČO prijímateľa</label>
+            <input type="text" id="asig_ico" placeholder="napr. 12345678" maxlength="12" oninput="calcAsig()">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div class="field">
+            <label>Obchodné meno prijímateľa</label>
+            <input type="text" id="asig_nazov" placeholder="napr. Nadácia XY" oninput="calcAsig()">
+          </div>
+          <div class="field">
+            <label>Súhlas so zaslaním údajov prijímateľovi</label>
+            <select id="asig_suhlas">
+              <option value="0">Nesúhlasím</option>
+              <option value="1">Súhlasím</option>
+            </select>
+          </div>
+        </div>
+        <div id="asig_vysledok" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
     <div class="section">
       <div class="section-header"><span class="section-tag">XML</span><span class="section-title">Exportný súbor pre eDane / PFS (DPFOBv25)</span></div>
       <div class="section-body">
@@ -601,8 +638,18 @@ function buildSummary() {
   generateXMLPreview();
 }
 
-// ——— XML ———
-function generateXMLPreview() {
+// ——— ASIGNÁCIA §50 ———
+function calcAsig() {
+  const perc = parseFloat(document.getElementById('asig_percento').value) || 0;
+  const el = document.getElementById('asig_vysledok');
+  if(!perc) { el.innerHTML = ''; buildSummary(); return; }
+  const dan = C.dan_po_bonuse || 0;
+  const suma = Math.max(3, Math.round(dan * perc) / 100);
+  el.innerHTML = `<div class="computed-row"><span class="computed-label">Suma asignácie (r.152) – min. 3 €</span><span class="computed-value highlight">${suma.toFixed(2)} €</span></div>`;
+  buildSummary();
+}
+
+
   const xml = buildXML();
   const el = document.getElementById('xmlOut');
   el.innerHTML = xml
@@ -624,6 +671,7 @@ function buildXML() {
   const titul  = document.getElementById('titul_pred').value;
   const titulZ = document.getElementById('titul_za').value;
   const ulica  = document.getElementById('ulica').value;
+  const cislo  = document.getElementById('cislo').value;
   const psc    = document.getElementById('psc').value.replace(/\s/g,'');
   const obec   = document.getElementById('obec').value;
   const tel    = document.getElementById('telefon').value;
@@ -640,7 +688,13 @@ function buildXML() {
   const odp = druhDP==='ODP'?'1':'0';
   const ddp = druhDP==='DDP'?'1':'0';
 
-  const pausalne_zivnost = rv('vydavky_zivnost')==='pausalne' ? 1 : 0;
+  const asigPerc = parseFloat(document.getElementById('asig_percento').value) || 0;
+  const asigIco  = document.getElementById('asig_ico').value.trim();
+  const asigNazov= document.getElementById('asig_nazov').value.trim();
+  const asigSuhlas = document.getElementById('asig_suhlas').value;
+  const asigSuma = asigPerc > 0 ? Math.max(3, Math.round((C.dan_po_bonuse||0) * asigPerc) / 100).toFixed(2) : '';
+  const splnam3 = asigPerc === 3 ? 1 : 0;
+  const neuplatnujem = asigPerc === 0 ? 1 : 0;
   const pausalne_ina     = rv('vydavky_ina')==='pausalne' ? 1 : 0;
   const pausalne = (pausalne_zivnost || pausalne_ina) ? 1 : 0;
 
@@ -681,7 +735,7 @@ function buildXML() {
 \t<titulZa>${esc(titulZ)}</titulZa>
 \t<adresaTrvPobytu>
 \t\t<ulica>${esc(ulica)}</ulica>
-\t\t<cislo></cislo>
+\t\t<cislo>${esc(cislo)}</cislo>
 \t\t<psc>${esc(psc)}</psc>
 \t\t<obec>${esc(obec)}</obec>
 \t\t<stat>Slovensko</stat>
@@ -896,13 +950,13 @@ function buildXML() {
 \t<r147></r147><r148></r148>
 \t<r149>0</r149><r150></r150>
 \t<r151>
-\t\t<ico></ico>
-\t\t<splnam3per>0</splnam3per>
-\t\t<neuplatnujemPar50>0</neuplatnujemPar50>
-\t\t<obchodneMeno><riadok><![CDATA[]]></riadok></obchodneMeno>
-\t\t<suhlasSoZaslanim>0</suhlasSoZaslanim>
+\t\t<ico>${esc(asigIco)}</ico>
+\t\t<splnam3per>${splnam3}</splnam3per>
+\t\t<neuplatnujemPar50>${neuplatnujem}</neuplatnujemPar50>
+\t\t<obchodneMeno><riadok><![CDATA[${asigNazov}]]></riadok></obchodneMeno>
+\t\t<suhlasSoZaslanim>${asigPerc > 0 ? asigSuhlas : 0}</suhlasSoZaslanim>
 \t</r151>
-\t<r152></r152>
+\t<r152>${asigSuma}</r152>
 \t<r153>
 \t\t<neuplatnujemPar50aa>1</neuplatnujemPar50aa>
 \t\t<rodicA><rodneCislo></rodneCislo><priezvisko></priezvisko><meno></meno></rodicA>
@@ -930,6 +984,29 @@ function buildXML() {
 \t\t<bankovyUcet><IBAN></IBAN></bankovyUcet>
 \t\t<datum></datum>
 \t</danovyPreplatokBonus>
+\t<pril2PodielyNaZisku>
+\t\t<pr1></pr1><pr2></pr2><pr3></pr3>
+\t\t<pr4><s1></s1><s2></s2></pr4>
+\t\t<pr5><s1></s1><s2></s2></pr5>
+\t\t<pr6><s1></s1><s2></s2></pr6>
+\t\t<pr7></pr7><pr8></pr8><pr9></pr9><pr10></pr10>
+\t\t<pr11></pr11><pr12></pr12><pr13></pr13><pr14></pr14>
+\t\t<pr15></pr15><pr16></pr16><pr17></pr17><pr18></pr18>
+\t\t<pr19></pr19><pr20></pr20><pr21></pr21>
+\t\t<pr22><s1></s1><s2></s2></pr22>
+\t\t<pr23><s1></s1><s2></s2></pr23>
+\t\t<pr24><s1></s1><s2></s2></pr24>
+\t\t<pr25></pr25><pr26>35</pr26><pr27></pr27><pr28></pr28>
+\t</pril2PodielyNaZisku>
+\t<pril3VynosyZDlhopisov>
+\t\t<pr1></pr1>
+\t\t<pr2></pr2>
+\t\t<pr3></pr3>
+\t\t<pr4>16</pr4>
+\t\t<pr5></pr5>
+\t\t<pr6></pr6><pr7></pr7><pr8></pr8><pr9></pr9>
+\t\t<pr10></pr10><pr11></pr11><pr12></pr12><pr13></pr13><pr14></pr14>
+\t</pril3VynosyZDlhopisov>
 \t<socZdravPoistenie>
 \t\t<pr1><s1></s1><s2></s2></pr1>
 \t\t<pr2></pr2><pr3></pr3><pr4></pr4><pr5></pr5><pr6></pr6>
@@ -965,6 +1042,8 @@ async function generatePDF() {
   const priezvisko = document.getElementById('priezvisko').value;
   const dic = document.getElementById('dic').value;
   const now = new Date().toLocaleDateString('sk-SK');
+  const asigPerc2 = parseFloat(document.getElementById('asig_percento').value) || 0;
+  const asigSuma2 = asigPerc2 > 0 ? Math.max(3, Math.round((C.dan_po_bonuse||0) * asigPerc2) / 100).toFixed(2) : '';
 
   const rows = [
     ['PRÍJMY ZO ZÁVISLEJ ČINNOSTI §5','',true],
@@ -991,6 +1070,7 @@ async function generatePDF() {
     ['Zrazené preddavky §5 (r.131)','−'+fmt(C.celk_pred5),false],
     [C.dan_na_uhradu>0?'DAŇ NA ÚHRADU (r.135)':'DAŇOVÝ PREPLATOK (r.136)',
      C.dan_na_uhradu>0?fmt(C.dan_na_uhradu):fmt(C.preplatok),true],
+    ...(asigPerc2 > 0 ? [['Asignácia '+asigPerc2+'% §50 (r.152)', asigSuma2+' €', false]] : []),
   ];
 
   // Vybuduj HTML pre rendering
