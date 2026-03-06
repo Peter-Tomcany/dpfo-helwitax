@@ -232,7 +232,7 @@
     <div class="section">
       <div class="section-header"><span class="section-tag">VI. ODDIEL / TAB.1</span><span class="section-title">Príjmy z podnikania a inej samostatnej zárobkovej činnosti (§6)</span></div>
       <div class="section-body">
-        <div class="info-box">Paušálne výdavky (§6 ods.10): <strong>60 % z príjmov</strong> + reálne zaplatené odvody. Podmienka: daňovník nebol platiteľom DPH (alebo bol iba časť roka).</div>
+        <div class="info-box">Paušálne výdavky (§6 ods.10): <strong>60 % z príjmov, max. 20 000 € ročne</strong> + reálne zaplatené odvody. Podmienka: daňovník nebol platiteľom DPH (alebo bol iba časť roka).</div>
 
         <div class="sub-header section-header" style="background:rgba(79,142,247,.06)">
           <span class="section-tag" style="background:rgba(79,142,247,.15)">§6 ods.1</span>
@@ -450,8 +450,9 @@ function calc() {
   const socialne = v('socialne');
   const celkove_odvody = zdravotne + socialne;
 
-  let vydavky_zivnost = rv('vydavky_zivnost')==='pausalne' ? p_zivnost*0.60 : v('v_zivnost_skutocne');
-  let vydavky_ina     = rv('vydavky_ina')==='pausalne'     ? p_ina*0.60     : v('v_ina_skutocne');
+  // Paušálne výdavky: 60% z príjmov, max 20 000 € ročne (§6 ods.10)
+  let vydavky_zivnost = rv('vydavky_zivnost')==='pausalne' ? Math.min(p_zivnost*0.60, 20000) : v('v_zivnost_skutocne');
+  let vydavky_ina     = rv('vydavky_ina')==='pausalne'     ? Math.min(p_ina*0.60, 20000)     : v('v_ina_skutocne');
 
   const celk_vydavky_6 = vydavky_zivnost + vydavky_ina + celkove_odvody;
   const celk_prijmy_6 = p_zivnost + p_ina;
