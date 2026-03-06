@@ -1028,13 +1028,15 @@ function buildXML() {
 function generateXML() {
   calc5(); calc();
   const xml = buildXML();
-  const blob = new Blob([xml],{type:'application/xml'});
-  const url = URL.createObjectURL(blob);
+  const filename = `DPFOBv25_${document.getElementById('priezvisko').value||'dankovnik'}_2025.xml`;
+  // data URL prístup – funguje aj na GitHub Pages
+  const dataUrl = 'data:application/xml;charset=utf-8,' + encodeURIComponent(xml);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = `DPFOBv25_${document.getElementById('priezvisko').value||'dankovnik'}_2025.xml`;
+  a.href = dataUrl;
+  a.download = filename;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  document.body.removeChild(a);
   generateXMLPreview();
 }
 
