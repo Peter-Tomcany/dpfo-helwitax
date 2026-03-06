@@ -191,6 +191,8 @@
   .cm-item-actions{display:flex;gap:8px}
   .cm-btn-select{background:var(--purple);color:#fff;border:none;padding:8px 18px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans)}
   .cm-btn-select:hover{background:var(--purple2)}
+  .cm-btn-edit{background:transparent;border:1.5px solid rgba(50,25,65,.25);color:var(--purple);padding:7px 12px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+  .cm-btn-edit:hover{background:rgba(50,25,65,.06)}
   .cm-btn-del{background:transparent;border:1.5px solid rgba(192,57,43,.3);color:#c0392b;padding:7px 12px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans)}
   .cm-btn-del:hover{background:rgba(192,57,43,.08)}
   .cm-empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px}
@@ -302,6 +304,35 @@
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button class="btn btn-secondary" onclick="toggleAddPanel()">Zrušiť</button>
         <button class="btn btn-green" onclick="saveNewClient()">Uložiť klienta</button>
+      </div>
+    </div>
+
+    <!-- Edit panel -->
+    <div class="cm-add-panel" id="cmEditPanel">
+      <div class="cm-add-title">Upraviť klienta</div>
+      <input type="hidden" id="cm_edit_id">
+      <div class="grid grid-3" style="margin-bottom:14px">
+        <div class="field"><label>Priezvisko *</label><input type="text" id="cm_edit_priezvisko" placeholder="Novák"></div>
+        <div class="field"><label>Meno *</label><input type="text" id="cm_edit_meno" placeholder="Ján"></div>
+        <div class="field"><label>DIČ</label><input type="text" id="cm_edit_dic" placeholder="1234567890"></div>
+      </div>
+      <div class="grid grid-3" style="margin-bottom:14px">
+        <div class="field"><label>Rodné číslo</label><input type="text" id="cm_edit_rc" placeholder="800101/1234"></div>
+        <div class="field"><label>E-mail</label><input type="text" id="cm_edit_email_k" placeholder="jan@novak.sk"></div>
+        <div class="field"><label>Telefón</label><input type="text" id="cm_edit_telefon_k" placeholder="+421 900 000 000"></div>
+      </div>
+      <div class="grid grid-3" style="margin-bottom:14px">
+        <div class="field" style="grid-column:span 2"><label>Ulica</label><input type="text" id="cm_edit_ulica" placeholder="Športovcov"></div>
+        <div class="field"><label>Č. domu</label><input type="text" id="cm_edit_cislo" placeholder="15"></div>
+      </div>
+      <div class="grid grid-3" style="margin-bottom:14px">
+        <div class="field"><label>PSČ</label><input type="text" id="cm_edit_psc" placeholder="91441"></div>
+        <div class="field"><label>Obec</label><input type="text" id="cm_edit_obec" placeholder="Trenčín"></div>
+        <div class="field"><label>SK NACE</label><input type="text" id="cm_edit_nace" placeholder="69.20.0"></div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-secondary" onclick="closeEditPanel()">Zrušiť</button>
+        <button class="btn btn-green" onclick="updateClient()">Uložiť zmeny</button>
       </div>
     </div>
 
@@ -1858,6 +1889,7 @@ function renderClients(list) {
       </div>
       <div class="cm-item-actions">
         <button class="cm-btn-select" onclick="event.stopPropagation();selectClient('${c.id}')">Vybrať →</button>
+        <button class="cm-btn-edit" onclick="event.stopPropagation();openEditPanel('${c.id}')">Upraviť</button>
         <button class="cm-btn-del" onclick="event.stopPropagation();deleteClient('${c.id}')">Odstrániť</button>
       </div>
     </div>
@@ -1899,13 +1931,83 @@ async function deleteClient(id) {
   showSaved('✓ Klient odstránený');
 }
 
+function openEditPanel(id) {
+  const c = allClients.find(x => x.id === id);
+  if (!c) return;
+  const s = (elId, val) => { const el = document.getElementById(elId); if(el) el.value = val || ''; };
+  s('cm_edit_id',        c.id);
+  s('cm_edit_priezvisko',c.priezvisko);
+  s('cm_edit_meno',      c.meno);
+  s('cm_edit_dic',       c.dic);
+  s('cm_edit_rc',        c.rc);
+  s('cm_edit_email_k',   c.email);
+  s('cm_edit_telefon_k', c.telefon);
+  s('cm_edit_ulica',     c.ulica);
+  s('cm_edit_cislo',     c.cislo);
+  s('cm_edit_psc',       c.psc);
+  s('cm_edit_obec',      c.obec);
+  s('cm_edit_nace',      c.nace);
+  // Close add panel if open
+  document.getElementById('cmAddPanel').classList.remove('open');
+  document.getElementById('cmEditPanel').classList.add('open');
+  document.getElementById('cmEditPanel').scrollIntoView({behavior:'smooth'});
+}
+
+function closeEditPanel() {
+  document.getElementById('cmEditPanel').classList.remove('open');
+}
+
+async function updateClient() {
+  const id = document.getElementById('cm_edit_id').value;
+  const priezvisko = document.getElementById('cm_edit_priezvisko').value.trim();
+  const meno = document.getElementById('cm_edit_meno').value.trim();
+  if (!priezvisko || !meno) { alert('Meno a priezvisko sú povinné.'); return; }
+  const obj = {
+    priezvisko, meno,
+    dic:     document.getElementById('cm_edit_dic').value.trim()      || null,
+    rc:      document.getElementById('cm_edit_rc').value.trim()       || null,
+    email:   document.getElementById('cm_edit_email_k').value.trim()  || null,
+    telefon: document.getElementById('cm_edit_telefon_k').value.trim()|| null,
+    ulica:   document.getElementById('cm_edit_ulica').value.trim()    || null,
+    cislo:   document.getElementById('cm_edit_cislo').value.trim()    || null,
+    psc:     document.getElementById('cm_edit_psc').value.trim()      || null,
+    obec:    document.getElementById('cm_edit_obec').value.trim()     || null,
+    nace:    document.getElementById('cm_edit_nace').value.trim()     || null,
+  };
+  const { data, error } = await sb.from('klienti').update(obj).eq('id', id).select().single();
+  if (error) { alert('Chyba pri ukladaní: ' + error.message); return; }
+  const idx = allClients.findIndex(c => c.id === id);
+  if (idx >= 0) allClients[idx] = data;
+  allClients.sort((a,b) => a.priezvisko.localeCompare(b.priezvisko));
+  closeEditPanel();
+  filterClients();
+  // Ak je editovaný klient aktuálne vybraný, aktualizuj formulár
+  if (currentClientId === id) {
+    const set = (elId, val) => { const el = document.getElementById(elId); if(el && val != null && val !== '') el.value = val; };
+    set('priezvisko', data.priezvisko);
+    set('meno',       data.meno);
+    set('dic',        data.dic);
+    set('rc',         data.rc);
+    set('email',      data.email);
+    set('telefon',    data.telefon);
+    set('ulica',      data.ulica);
+    set('cislo',      data.cislo);
+    set('psc',        data.psc);
+    set('obec',       data.obec);
+    set('nace',       data.nace);
+    const sub = document.querySelector('.subtitle');
+    if (sub) sub.textContent = `Zdaňovacie obdobie 2025 · ${data.priezvisko} ${data.meno}`;
+  }
+  showSaved('✓ Klient aktualizovaný');
+}
+
 function selectClient(id) {
   const c = allClients.find(x => x.id === id);
   if (!c) return;
   currentClientId = id;
 
   // Pre-fill form fields
-  const set = (elId, val) => { const el = document.getElementById(elId); if(el && val) el.value = val; };
+  const set = (elId, val) => { const el = document.getElementById(elId); if(el && val != null && val !== '') el.value = val; };
   set('priezvisko', c.priezvisko);
   set('meno',       c.meno);
   set('dic',        c.dic);
