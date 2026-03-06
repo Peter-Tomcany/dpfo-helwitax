@@ -698,6 +698,7 @@ function buildXML() {
   const asigSuma = asigPerc > 0 ? Math.max(3, Math.round((C.dan_po_bonuse||0) * asigPerc) / 100).toFixed(2) : '';
   const splnam3 = asigPerc === 3 ? 1 : 0;
   const neuplatnujem = asigPerc === 0 ? 1 : 0;
+  const pausalne_zivnost = rv('vydavky_zivnost')==='pausalne' ? 1 : 0;
   const pausalne_ina     = rv('vydavky_ina')==='pausalne' ? 1 : 0;
   const pausalne = (pausalne_zivnost || pausalne_ina) ? 1 : 0;
 
@@ -1031,17 +1032,25 @@ function generateXML() {
     calc5(); calc();
     const xml = buildXML();
     const filename = `DPFOBv25_${document.getElementById('priezvisko').value||'dankovnik'}_2025.xml`;
-    const blob = new Blob([xml], {type: 'application/xml;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+    // Metóda 1: Blob + objektURL
+    try {
+      const blob = new Blob(['\uFEFF' + xml], {type: 'application/xml;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+    } catch(e1) {
+      // Metóda 2: data URI fallback
+      const uri = 'data:application/xml;charset=utf-8,' + encodeURIComponent(xml);
+      window.open(uri, '_blank');
+    }
     generateXMLPreview();
   } catch(e) {
-    alert('Chyba pri generovaní XML:\n' + e.message);
+    alert('Chyba pri generovaní XML:\n' + e.message + '\n\nSkontrolujte konzolu (F12).');
     console.error(e);
   }
 }
