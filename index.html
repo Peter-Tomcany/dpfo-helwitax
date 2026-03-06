@@ -690,10 +690,11 @@ function buildXML() {
   const odp = druhDP==='ODP'?'1':'0';
   const ddp = druhDP==='DDP'?'1':'0';
 
-  const asigPerc = parseFloat(document.getElementById('asig_percento').value) || 0;
-  const asigIco  = document.getElementById('asig_ico').value.trim();
-  const asigNazov= document.getElementById('asig_nazov').value.trim();
-  const asigSuhlas = document.getElementById('asig_suhlas').value;
+  const getVal = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const asigPerc = parseFloat(getVal('asig_percento')) || 0;
+  const asigIco  = getVal('asig_ico').trim();
+  const asigNazov= getVal('asig_nazov').trim();
+  const asigSuhlas = getVal('asig_suhlas') || '0';
   const asigSuma = asigPerc > 0 ? Math.max(3, Math.round((C.dan_po_bonuse||0) * asigPerc) / 100).toFixed(2) : '';
   const splnam3 = asigPerc === 3 ? 1 : 0;
   const neuplatnujem = asigPerc === 0 ? 1 : 0;
@@ -1026,18 +1027,23 @@ function buildXML() {
 }
 
 function generateXML() {
-  calc5(); calc();
-  const xml = buildXML();
-  const filename = `DPFOBv25_${document.getElementById('priezvisko').value||'dankovnik'}_2025.xml`;
-  // data URL prístup – funguje aj na GitHub Pages
-  const dataUrl = 'data:application/xml;charset=utf-8,' + encodeURIComponent(xml);
-  const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  generateXMLPreview();
+  try {
+    calc5(); calc();
+    const xml = buildXML();
+    const filename = `DPFOBv25_${document.getElementById('priezvisko').value||'dankovnik'}_2025.xml`;
+    const blob = new Blob([xml], {type: 'application/xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+    generateXMLPreview();
+  } catch(e) {
+    alert('Chyba pri generovaní XML:\n' + e.message);
+    console.error(e);
+  }
 }
 
 // ——— PDF ———
