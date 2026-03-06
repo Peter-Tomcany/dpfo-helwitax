@@ -650,8 +650,10 @@ function calcAsig() {
 }
 
 
+function generateXMLPreview() {
   const xml = buildXML();
   const el = document.getElementById('xmlOut');
+  if(!el) return;
   el.innerHTML = xml
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/&lt;(\/?[\w:]+)/g,'<span style="color:#f75f5f">&lt;$1</span>')
