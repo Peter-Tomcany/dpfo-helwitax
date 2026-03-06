@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DPFO Typ B 2025 – Helwitax</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+  :root {
+    --bg:#0f1117; --surface:#1a1d27; --surface2:#232635; --border:#2e3247;
+    --accent:#4f8ef7; --accent2:#7c5cbf; --green:#3ecf8e; --red:#f75f5f;
+    --yellow:#f7c948; --text:#e2e6f0; --muted:#6b7394;
+    --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:14px}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .logo{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
+  .logo span{color:var(--muted)}
+  .badge{font-family:var(--mono);font-size:11px;background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.3);color:var(--accent);padding:3px 10px;border-radius:3px;letter-spacing:.05em}
+  .container{max-width:920px;margin:0 auto;padding:32px 24px 80px}
+  h1{font-size:22px;font-weight:600;margin-bottom:4px;letter-spacing:-.01em}
+  .subtitle{color:var(--muted);font-size:13px;margin-bottom:32px;font-family:var(--mono)}
+  .steps{display:flex;gap:0;margin-bottom:32px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+  .step{flex:1;padding:12px 8px;background:var(--surface);border-right:1px solid var(--border);cursor:pointer;transition:background .15s;text-align:center}
+  .step:last-child{border-right:none}
+  .step.active{background:rgba(79,142,247,.1);border-bottom:2px solid var(--accent)}
+  .step.done{background:rgba(62,207,142,.06)}
+  .step-num{font-family:var(--mono);font-size:10px;color:var(--muted);display:block;margin-bottom:2px}
+  .step-label{font-size:12px;font-weight:500;color:var(--text)}
+  .step.active .step-label{color:var(--accent)}
+  .step.done .step-label{color:var(--green)}
+  .section{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:20px;overflow:hidden}
+  .section-header{padding:14px 20px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .section-tag{font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--bg);padding:2px 7px;border-radius:3px;border:1px solid var(--border)}
+  .section-title{font-size:13px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--text)}
+  .section-body{padding:20px}
+  .grid{display:grid;gap:16px}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  .field{display:flex;flex-direction:column;gap:5px}
+  label{font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase}
+  input,select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:5px;font-family:var(--sans);font-size:13px;transition:border-color .15s;width:100%}
+  input:focus,select:focus{outline:none;border-color:var(--accent)}
+  input[type="number"]{font-family:var(--mono)}
+  .field-note{font-size:11px;color:var(--muted);font-style:italic}
+  .radio-group{display:flex;gap:8px;flex-wrap:wrap}
+  .radio-opt{display:flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:13px;transition:all .15s;background:var(--bg)}
+  .radio-opt input{width:auto}
+  .radio-opt:has(input:checked){border-color:var(--accent);background:rgba(79,142,247,.1);color:var(--accent)}
+  .divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+  .computed-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--bg);border-radius:5px;border:1px solid var(--border);margin-top:8px}
+  .computed-label{font-size:12px;color:var(--muted);font-family:var(--mono)}
+  .computed-value{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--green)}
+  .computed-value.highlight{color:var(--yellow);font-size:18px}
+  .page{display:none}
+  .page.active{display:block}
+  .sum-table{width:100%;border-collapse:collapse}
+  .sum-table tr{border-bottom:1px solid var(--border)}
+  .sum-table tr:last-child{border-bottom:none}
+  .sum-table td{padding:10px 16px;font-size:13px}
+  .sum-table td:first-child{color:var(--muted);font-family:var(--mono);font-size:11px;width:80px}
+  .sum-table td:last-child{text-align:right;font-family:var(--mono);font-weight:600}
+  .sum-table .total td{color:var(--yellow);font-size:15px}
+  .sum-table .section-sep td{background:var(--surface2);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:6px 16px}
+  .btn-row{display:flex;gap:12px;margin-top:28px;justify-content:flex-end}
+  .btn{padding:10px 24px;border-radius:5px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:var(--sans);transition:all .15s;letter-spacing:.02em}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:#6a9ff8}
+  .btn-secondary{background:transparent;border:1px solid var(--border);color:var(--text)}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-green{background:var(--green);color:#0f1117}
+  .btn-green:hover{background:#52e0a0}
+  .btn-purple{background:var(--accent2);color:#fff}
+  .info-box{padding:12px 16px;background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.25);border-radius:5px;font-size:12px;color:#8ab5f8;line-height:1.6;margin-bottom:16px}
+  .warn-box{padding:12px 16px;background:rgba(247,201,72,.08);border:1px solid rgba(247,201,72,.25);border-radius:5px;font-size:12px;color:var(--yellow);line-height:1.6;margin-top:12px}
+  .xml-output{background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:16px;font-family:var(--mono);font-size:11px;color:#8ab5f8;overflow-x:auto;white-space:pre;max-height:400px;overflow-y:auto;line-height:1.7}
+  .sub-header{margin:0 -20px;padding:10px 20px}
+  @media(max-width:640px){
+    .grid-2,.grid-3{grid-template-columns:1fr}
+    header{padding:12px 16px}
+    .container{padding:20px 16px 60px}
+    .steps{flex-direction:column}
+    .step{border-right:none;border-bottom:1px solid var(--border)}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Helwitax <span>/</span> DPFO-B</div>
+  <div class="badge">DPFOBv25 · ZO 2025</div>
+</header>
+
+<div class="container">
+  <h1>Daňové priznanie – Typ B</h1>
+  <div class="subtitle">Zdaňovacie obdobie 2025 · Tlačivo MF/012186/2025-721</div>
+
+  <div class="steps">
+    <div class="step active" onclick="goPage(0)"><span class="step-num">01</span><span class="step-label">Daňovník</span></div>
+    <div class="step" onclick="goPage(1)"><span class="step-num">02</span><span class="step-label">Príjmy §5</span></div>
+    <div class="step" onclick="goPage(2)"><span class="step-num">03</span><span class="step-label">Príjmy §6</span></div>
+    <div class="step" onclick="goPage(3)"><span class="step-num">04</span><span class="step-label">Odpočty</span></div>
+    <div class="step" onclick="goPage(4)"><span class="step-num">05</span><span class="step-label">Súhrn & Export</span></div>
+  </div>
+
+  <!-- PAGE 0 – DAŇOVNÍK -->
+  <div class="page active" id="page0">
+    <div class="section">
+      <div class="section-header"><span class="section-tag">I. ODDIEL</span><span class="section-title">Údaje o daňovníkovi</span></div>
+      <div class="section-body">
+        <div class="info-box">Formulár DPFOBv25 platný od 1.1.2026 – zdaňovacie obdobie 2025. Lehota podania: <strong>31.3.2026</strong> (odklad do 30.6. alebo 30.9.2026 pri zahraničných príjmoch).</div>
+        <div class="grid grid-3" style="margin-bottom:16px">
+          <div class="field"><label>DIČ (r.01)</label><input type="text" id="dic" placeholder="1234567890" maxlength="10"></div>
+          <div class="field"><label>Druh daňového priznania</label><select id="druhDP"><option value="DP">Daňové (riadne)</option><option value="ODP">Opravné</option><option value="DDP">Dodatočné</option></select></div>
+          <div class="field"><label>SK NACE (r.03)</label><input type="text" id="nace" placeholder="pr. 69.20.0"></div>
+        </div>
+        <div class="grid grid-2" style="margin-bottom:16px">
+          <div class="field"><label>Meno (r.05)</label><input type="text" id="meno" placeholder="Ján"></div>
+          <div class="field"><label>Priezvisko (r.04)</label><input type="text" id="priezvisko" placeholder="Novák"></div>
+        </div>
+        <div class="grid grid-2" style="margin-bottom:16px">
+          <div class="field"><label>Titul pred (r.06)</label><input type="text" id="titul_pred" placeholder="Ing."></div>
+          <div class="field"><label>Titul za</label><input type="text" id="titul_za" placeholder=""></div>
+        </div>
+        <div class="grid grid-3" style="margin-bottom:16px">
+          <div class="field"><label>Rodné číslo (r.09)</label><input type="text" id="rc" placeholder="800101/1234"></div>
+          <div class="field"><label>Dátum narodenia</label><input type="date" id="datnar"></div>
+          <div class="field"><label>Štát rezidencie</label><input type="text" id="stat" value="SR"></div>
+        </div>
+        <hr class="divider">
+        <div class="grid grid-2" style="margin-bottom:16px">
+          <div class="field"><label>Ulica a číslo (r.07)</label><input type="text" id="ulica" placeholder="Dlhá 10"></div>
+          <div class="field"><label>PSČ</label><input type="text" id="psc" placeholder="81101"></div>
+        </div>
+        <div class="grid grid-2" style="margin-bottom:16px">
+          <div class="field"><label>Obec (r.08)</label><input type="text" id="obec" placeholder="Bratislava"></div>
+          <div class="field"><label>Telefón (r.27)</label><input type="text" id="telefon" placeholder="+421 900 000 000"></div>
+        </div>
+        <div class="field"><label>E-mail (r.28)</label><input type="email" id="email" placeholder="jan@novak.sk"></div>
+      </div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="goPage(1)">Pokračovať →</button></div>
+  </div>
+
+  <!-- PAGE 1 – §5 ZÁVISLÁ ČINNOSŤ -->
+  <div class="page" id="page1">
+    <div class="section">
+      <div class="section-header"><span class="section-tag">V. ODDIEL</span><span class="section-title">Príjmy zo závislej činnosti (§5)</span></div>
+      <div class="section-body">
+        <div class="info-box">
+          Ak daňovník mal v roku 2025 <strong>aj príjmy zo zamestnania, dohody alebo konateľstva</strong>, vypĺňa tento oddiel. Údaje preberá z <em>Potvrdenia o zdaniteľných príjmoch</em> od zamestnávateľa. Ak nemal §5 príjmy, nechajte všetko na 0.
+        </div>
+
+        <!-- Zamestnávateľ 1 -->
+        <div class="sub-header section-header" style="background:rgba(79,142,247,.06)">
+          <span class="section-tag" style="background:rgba(79,142,247,.15)">ZAM 1</span>
+          <span class="section-title" style="font-size:12px">Zamestnávateľ / Dohoda č.1</span>
+        </div>
+        <div class="grid grid-3" style="margin-top:16px;margin-bottom:16px">
+          <div class="field">
+            <label>Príjmy zo ZČ brutto (€) – r.36</label>
+            <input type="number" id="p5_1_prijmy" value="0" min="0" step="0.01" oninput="calc5()">
+            <span class="field-note">Hrubý príjem vrátane nepeňažných</span>
+          </div>
+          <div class="field">
+            <label>Povinné poistné (€) – r.37</label>
+            <input type="number" id="p5_1_poistne" value="0" min="0" step="0.01" oninput="calc5()">
+            <span class="field-note">ZP + SP zrazené zamestnávateľom</span>
+          </div>
+          <div class="field">
+            <label>Preddavky na daň zrazené (€) – r.39</label>
+            <input type="number" id="p5_1_preddavky" value="0" min="0" step="0.01" oninput="calc5()">
+            <span class="field-note">Zrazené preddavky v roku 2025</span>
+          </div>
+        </div>
+        <div class="grid grid-2" style="margin-bottom:16px">
+          <div class="field">
+            <label>Druh príjmu</label>
+            <select id="p5_1_druh">
+              <option value="zam">Pracovný pomer (HPP/DPP/DPC)</option>
+              <option value="dohoda">Dohoda o vykonaní práce / pracovnej činnosti</option>
+              <option value="konatel">Konateľ / člen org. zložky</option>
+              <option value="ine">Iné §5</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Ročné zúčtovanie vykonané zamestnávateľom?</label>
+            <div class="radio-group">
+              <label class="radio-opt"><input type="radio" name="zuctovanie1" value="nie" checked> Nie</label>
+              <label class="radio-opt"><input type="radio" name="zuctovanie1" value="ano"> Áno</label>
+            </div>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Zamestnávateľ 2 -->
+        <div class="sub-header section-header" style="background:rgba(124,92,191,.06)">
+          <span class="section-tag" style="background:rgba(124,92,191,.15)">ZAM 2</span>
+          <span class="section-title" style="font-size:12px">Zamestnávateľ / Dohoda č.2 (voliteľné)</span>
+        </div>
+        <div class="grid grid-3" style="margin-top:16px;margin-bottom:16px">
+          <div class="field">
+            <label>Príjmy zo ZČ brutto (€)</label>
+            <input type="number" id="p5_2_prijmy" value="0" min="0" step="0.01" oninput="calc5()">
+          </div>
+          <div class="field">
+            <label>Povinné poistné (€)</label>
+            <input type="number" id="p5_2_poistne" value="0" min="0" step="0.01" oninput="calc5()">
+          </div>
+          <div class="field">
+            <label>Preddavky na daň zrazené (€)</label>
+            <input type="number" id="p5_2_preddavky" value="0" min="0" step="0.01" oninput="calc5()">
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Súhrn §5 -->
+        <div id="vysledok_par5" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goPage(0)">← Späť</button>
+      <button class="btn btn-primary" onclick="goPage(2)">Pokračovať →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 2 – §6 PODNIKANIE -->
+  <div class="page" id="page2">
+    <div class="section">
+      <div class="section-header"><span class="section-tag">VI. ODDIEL / TAB.1</span><span class="section-title">Príjmy z podnikania a inej samostatnej zárobkovej činnosti (§6)</span></div>
+      <div class="section-body">
+        <div class="info-box">Paušálne výdavky (§6 ods.10): <strong>60 % z príjmov</strong> + reálne zaplatené odvody. Podmienka: daňovník nebol platiteľom DPH (alebo bol iba časť roka).</div>
+
+        <div class="sub-header section-header" style="background:rgba(79,142,247,.06)">
+          <span class="section-tag" style="background:rgba(79,142,247,.15)">§6 ods.1</span>
+          <span class="section-title" style="font-size:12px">Živnosť – r.02 Tab.1</span>
+        </div>
+        <div class="grid grid-2" style="margin-top:16px;margin-bottom:16px">
+          <div class="field"><label>Príjmy zo živnosti (€)</label><input type="number" id="p_zivnost" value="0" min="0" step="0.01" oninput="calc()"></div>
+          <div class="field">
+            <label>Spôsob výdavkov</label>
+            <div class="radio-group">
+              <label class="radio-opt"><input type="radio" name="vydavky_zivnost" value="pausalne" checked onchange="toggleSkutocne()"> Paušálne 60%</label>
+              <label class="radio-opt"><input type="radio" name="vydavky_zivnost" value="skutocne" onchange="toggleSkutocne()"> Skutočné</label>
+            </div>
+          </div>
+        </div>
+        <div id="skutocne_zivnost" style="display:none;margin-bottom:16px">
+          <div class="field"><label>Skutočné výdavky zo živnosti (bez odvodov) (€)</label><input type="number" id="v_zivnost_skutocne" value="0" min="0" step="0.01" oninput="calc()"></div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="sub-header section-header" style="background:rgba(124,92,191,.06)">
+          <span class="section-tag" style="background:rgba(124,92,191,.15)">§6 ods.2</span>
+          <span class="section-title" style="font-size:12px">Iná samostatná zárobková činnosť – r.03 Tab.1</span>
+        </div>
+        <div class="grid grid-2" style="margin-top:16px;margin-bottom:16px">
+          <div class="field"><label>Príjmy iná SZČO (€)</label><input type="number" id="p_ina" value="0" min="0" step="0.01" oninput="calc()"></div>
+          <div class="field">
+            <label>Spôsob výdavkov</label>
+            <div class="radio-group">
+              <label class="radio-opt"><input type="radio" name="vydavky_ina" value="pausalne" checked onchange="toggleSkutocneIna()"> Paušálne 60%</label>
+              <label class="radio-opt"><input type="radio" name="vydavky_ina" value="skutocne" onchange="toggleSkutocneIna()"> Skutočné</label>
+            </div>
+          </div>
+        </div>
+        <div id="skutocne_ina" style="display:none;margin-bottom:16px">
+          <div class="field"><label>Skutočné výdavky iná SZČO (bez odvodov) (€)</label><input type="number" id="v_ina_skutocne" value="0" min="0" step="0.01" oninput="calc()"></div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="sub-header section-header" style="background:rgba(62,207,142,.06)">
+          <span class="section-tag" style="background:rgba(62,207,142,.15)">ODVODY</span>
+          <span class="section-title" style="font-size:12px">Zaplatené poistné – pod Tab.1 / Príloha č.4</span>
+        </div>
+        <div class="grid grid-2" style="margin-top:16px;margin-bottom:16px">
+          <div class="field">
+            <label>Zdravotné poistenie zaplatené 2025 (€) – r.13</label>
+            <input type="number" id="zdravotne" value="0" min="0" step="0.01" oninput="calc()">
+            <span class="field-note">Preddavky zaplatené v roku 2025 (z živnosti)</span>
+          </div>
+          <div class="field">
+            <label>Sociálne poistenie zaplatené 2025 (€) – r.11</label>
+            <input type="number" id="socialne" value="0" min="0" step="0.01" oninput="calc()">
+            <span class="field-note">Poistné SP zaplatené v roku 2025</span>
+          </div>
+        </div>
+        <div id="vysledok_prijmy" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goPage(1)">← Späť</button>
+      <button class="btn btn-primary" onclick="goPage(3)">Pokračovať →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 3 – ODPOČTY -->
+  <div class="page" id="page3">
+    <div class="section">
+      <div class="section-header"><span class="section-tag">IX. ODDIEL</span><span class="section-title">Nezdaniteľné časti základu dane (§11)</span></div>
+      <div class="section-body">
+        <div class="info-box">NČZD na daňovníka za rok 2025: <strong>5 753,79 €</strong> (ak úhrn ZD ≤ 24 952,06 €). Pri vyššom ZD sa kráti podľa §11 ods.1 písm.a).</div>
+        <div class="grid grid-2" style="margin-bottom:16px">
+          <div class="field">
+            <label>Uplatniť NČZD na daňovníka? (r.30)</label>
+            <div class="radio-group">
+              <label class="radio-opt"><input type="radio" name="nczd_dankovnik" value="ano" checked onchange="calc()"> Áno</label>
+              <label class="radio-opt"><input type="radio" name="nczd_dankovnik" value="nie" onchange="calc()"> Nie (dôchodca)</label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Výška dôchodku k 1.1.2025 (€) – r.29</label>
+            <input type="number" id="dochodok" value="0" min="0" step="0.01" oninput="calc()" placeholder="0 ak nie je dôchodca">
+            <span class="field-note">Vypĺňa len poberateľ dôchodku</span>
+          </div>
+        </div>
+        <hr class="divider">
+        <div class="grid grid-2" style="margin-bottom:16px">
+          <div class="field">
+            <label>Príspevky III. pilier 2025 (€)</label>
+            <input type="number" id="iii_pilier" value="0" min="0" max="180" step="0.01" oninput="calc()">
+            <span class="field-note">Max. odpočet: 180 €</span>
+          </div>
+          <div class="field">
+            <label>NČZD na manžel/ku (€) – r.31</label>
+            <input type="number" id="nczd_manzel" value="0" min="0" step="0.01" oninput="calc()">
+            <span class="field-note">Ak manžel/ka nemala vlastné príjmy &gt; 0 v roku 2025</span>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="sub-header section-header" style="background:rgba(247,201,72,.06)">
+          <span class="section-tag" style="background:rgba(247,201,72,.15)">§33</span>
+          <span class="section-title" style="font-size:12px">Daňový bonus na dieťa – r.33</span>
+        </div>
+        <div class="grid grid-3" style="margin-top:16px;margin-bottom:16px">
+          <div class="field"><label>Deti do 6 rokov (počet)</label><input type="number" id="deti_do6" value="0" min="0" max="10" oninput="calc()"><span class="field-note">Bonus: 100 €/mes.</span></div>
+          <div class="field"><label>Deti 6–15 rokov (počet)</label><input type="number" id="deti_6_15" value="0" min="0" max="10" oninput="calc()"><span class="field-note">Bonus: 50 €/mes.</span></div>
+          <div class="field"><label>Deti 15–18 rokov (počet)</label><input type="number" id="deti_15_18" value="0" min="0" max="10" oninput="calc()"><span class="field-note">Bonus: 50 €/mes.</span></div>
+        </div>
+        <div class="field" style="margin-bottom:16px">
+          <label>Počet mesiacov uplatňovania bonusu v roku 2025</label>
+          <input type="number" id="bonus_mesiacov" value="12" min="1" max="12" oninput="calc()">
+        </div>
+        <div class="warn-box">⚠️ Od roku 2025: daňový bonus na deti staršie ako 18 rokov <strong>nie je možné</strong> uplatniť. Bonus je limitovaný na 55% ZD z §5+§6.</div>
+        <div id="vysledok_odpcty" style="margin-top:16px"></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goPage(2)">← Späť</button>
+      <button class="btn btn-primary" onclick="goPage(4);buildSummary()">Zobraziť súhrn →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 4 – SÚHRN & EXPORT -->
+  <div class="page" id="page4">
+    <div class="section">
+      <div class="section-header"><span class="section-tag">VÝPOČET</span><span class="section-title">Súhrn a výsledná daňová povinnosť</span></div>
+      <div class="section-body"><table class="sum-table" id="sumTable"></table></div>
+    </div>
+    <div class="section">
+      <div class="section-header"><span class="section-tag">XML</span><span class="section-title">Exportný súbor pre eDane / PFS (DPFOBv25)</span></div>
+      <div class="section-body">
+        <div class="info-box">Vygenerovaný XML súbor je kompatibilný so schémou <strong>DPFOBv25</strong>. Nahrajte ho priamo na Portál finančnej správy alebo do aplikácie eDane.</div>
+        <div class="xml-output" id="xmlOut">— generuje sa automaticky —</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goPage(3)">← Späť</button>
+      <button class="btn btn-green" onclick="generateXML()">⬇ Stiahnuť XML</button>
+      <button class="btn btn-purple" onclick="generatePDF()">⬇ Stiahnuť PDF súhrn</button>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ——— NAV ———
+let currentPage = 0;
+function goPage(n) {
+  document.querySelectorAll('.page').forEach((p,i) => p.classList.toggle('active', i===n));
+  document.querySelectorAll('.step').forEach((s,i) => {
+    s.classList.remove('active','done');
+    if(i===n) s.classList.add('active');
+    if(i<n) s.classList.add('done');
+  });
+  currentPage = n;
+  calc5(); calc();
+}
+
+// ——— TOGGLES ———
+function toggleSkutocne() {
+  const val = document.querySelector('[name="vydavky_zivnost"]:checked')?.value;
+  document.getElementById('skutocne_zivnost').style.display = val==='skutocne' ? 'block' : 'none';
+  calc();
+}
+function toggleSkutocneIna() {
+  const val = document.querySelector('[name="vydavky_ina"]:checked')?.value;
+  document.getElementById('skutocne_ina').style.display = val==='skutocne' ? 'block' : 'none';
+  calc();
+}
+
+// ——— HELPERS ———
+const v = id => parseFloat(document.getElementById(id)?.value)||0;
+const rv = name => document.querySelector(`[name="${name}"]:checked`)?.value;
+const fmt = n => n.toFixed(2).replace('.',',')+' €';
+let C = {};
+
+// ——— §5 CALC ———
+function calc5() {
+  const p1 = v('p5_1_prijmy'), poi1 = v('p5_1_poistne'), pred1 = v('p5_1_preddavky');
+  const p2 = v('p5_2_prijmy'), poi2 = v('p5_2_poistne'), pred2 = v('p5_2_preddavky');
+  const celk_p5 = p1 + p2;
+  const celk_poi5 = poi1 + poi2;
+  const celk_pred5 = pred1 + pred2;
+  const czd_5 = Math.max(0, celk_p5 - celk_poi5);
+
+  C.celk_p5 = celk_p5;
+  C.celk_poi5 = celk_poi5;
+  C.celk_pred5 = celk_pred5;
+  C.czd_5 = czd_5;
+  C.p5_1_prijmy = p1; C.p5_1_poistne = poi1; C.p5_1_preddavky = pred1;
+  C.p5_2_prijmy = p2; C.p5_2_poistne = poi2; C.p5_2_preddavky = pred2;
+
+  const el = document.getElementById('vysledok_par5');
+  if(el) el.innerHTML = `
+    <div class="computed-row"><span class="computed-label">Príjmy §5 spolu (r.36)</span><span class="computed-value">${fmt(celk_p5)}</span></div>
+    <div class="computed-row"><span class="computed-label">Povinné poistné (r.37)</span><span class="computed-value">${fmt(celk_poi5)}</span></div>
+    <div class="computed-row"><span class="computed-label">Preddavky zrazené (r.39)</span><span class="computed-value">${fmt(celk_pred5)}</span></div>
+    <div class="computed-row"><span class="computed-label">ČZD §5 (r.38)</span><span class="computed-value highlight">${fmt(czd_5)}</span></div>
+  `;
+  calc();
+}
+
+// ——— MAIN CALC ———
+function calc() {
+  // §5 values (may already be in C from calc5)
+  const czd_5 = C.czd_5 || 0;
+
+  // §6
+  const p_zivnost = v('p_zivnost');
+  const p_ina = v('p_ina');
+  const zdravotne = v('zdravotne');
+  const socialne = v('socialne');
+  const celkove_odvody = zdravotne + socialne;
+
+  let vydavky_zivnost = rv('vydavky_zivnost')==='pausalne' ? p_zivnost*0.60 : v('v_zivnost_skutocne');
+  let vydavky_ina     = rv('vydavky_ina')==='pausalne'     ? p_ina*0.60     : v('v_ina_skutocne');
+
+  const celk_vydavky_6 = vydavky_zivnost + vydavky_ina + celkove_odvody;
+  const celk_prijmy_6 = p_zivnost + p_ina;
+  let czd_6 = celk_prijmy_6 - celk_vydavky_6;
+  if(czd_6 < 0) czd_6 = 0;
+
+  // Úhrn aktívnych ZD (§5 + §6 ods.1+2)
+  const uhrnZD_aktivny = czd_5 + czd_6;
+
+  // NČZD na daňovníka – počíta sa z úhrnu aktívnych ZD
+  const NCZD_PLNA = 5753.79;
+  const NCZD_LIMIT = 24952.06;
+  let nczd_dankovnik_suma = 0;
+  if(rv('nczd_dankovnik')==='ano') {
+    const doc = v('dochodok');
+    if(uhrnZD_aktivny <= NCZD_LIMIT) {
+      nczd_dankovnik_suma = Math.max(0, NCZD_PLNA - doc);
+    } else {
+      const krat = 9677.73 - uhrnZD_aktivny/4;
+      nczd_dankovnik_suma = Math.max(0, krat - doc);
+    }
+  }
+
+  const iii = Math.min(v('iii_pilier'), 180);
+  const nczd_manzel = v('nczd_manzel');
+  const celk_nczd = nczd_dankovnik_suma + iii + nczd_manzel;
+
+  // ZD po NČZD – NČZD sa odpočítava od §5 najprv, potom §6
+  let zd_5_po_nczd = Math.max(0, czd_5 - celk_nczd);
+  let nczd_zostatok = Math.max(0, celk_nczd - czd_5);
+  let zd_6_po_nczd = Math.max(0, czd_6 - nczd_zostatok);
+  const zd_po_nczd = zd_5_po_nczd + zd_6_po_nczd;
+
+  // Daň 2025: 19% do 41 445,46 €, 25% nad
+  const PASOM1 = 41445.46;
+  let dan = zd_po_nczd <= PASOM1 ? zd_po_nczd*0.19 : PASOM1*0.19 + (zd_po_nczd-PASOM1)*0.25;
+
+  // Daňový bonus – limitovaný na 55% úhrnu aktívnych ZD (§5+§6 ods.1+2)
+  const mes = Math.min(12, Math.max(1, parseInt(v('bonus_mesiacov'))||12));
+  const bonus_raw = (parseInt(v('deti_do6'))||0)*100*mes + (parseInt(v('deti_6_15'))||0)*50*mes + (parseInt(v('deti_15_18'))||0)*50*mes;
+  const bonus_limit = uhrnZD_aktivny * 0.55;
+  const bonus = Math.min(bonus_raw, bonus_limit);
+
+  // Výsledná daň
+  let dan_po_bonuse = Math.max(0, dan - bonus);
+
+  // Zápočet preddavkov §5
+  const celk_pred5 = C.celk_pred5 || 0;
+  const dan_na_uhradu = Math.max(0, dan_po_bonuse - celk_pred5);
+  const preplatok = Math.max(0, celk_pred5 - dan_po_bonuse);
+
+  // Cache
+  Object.assign(C, {
+    p_zivnost, p_ina, celk_prijmy_6,
+    vydavky_zivnost, vydavky_ina, celkove_odvody, celk_vydavky_6,
+    czd_6, czd_5, uhrnZD_aktivny,
+    nczd_dankovnik_suma, iii, nczd_manzel, celk_nczd,
+    zd_po_nczd, dan, bonus_raw, bonus_limit, bonus,
+    dan_po_bonuse, dan_na_uhradu, preplatok,
+    zdravotne, socialne
+  });
+
+  // Live feedback on §6 page
+  const r1 = document.getElementById('vysledok_prijmy');
+  if(r1) r1.innerHTML = `
+    <div class="computed-row"><span class="computed-label">Príjmy §6 spolu (r.10)</span><span class="computed-value">${fmt(celk_prijmy_6)}</span></div>
+    <div class="computed-row"><span class="computed-label">Výdavky §6 (paušál + odvody)</span><span class="computed-value">${fmt(celk_vydavky_6)}</span></div>
+    <div class="computed-row"><span class="computed-label">ČZD §6 (r.55)</span><span class="computed-value highlight">${fmt(czd_6)}</span></div>
+  `;
+
+  // Live feedback on odpočty page
+  const r2 = document.getElementById('vysledok_odpcty');
+  if(r2) r2.innerHTML = `
+    <div class="computed-row"><span class="computed-label">ČZD §5</span><span class="computed-value">${fmt(czd_5)}</span></div>
+    <div class="computed-row"><span class="computed-label">ČZD §6</span><span class="computed-value">${fmt(czd_6)}</span></div>
+    <div class="computed-row"><span class="computed-label">NČZD celkom</span><span class="computed-value">${fmt(celk_nczd)}</span></div>
+    <div class="computed-row"><span class="computed-label">Základ dane po odpočtoch</span><span class="computed-value">${fmt(zd_po_nczd)}</span></div>
+    <div class="computed-row"><span class="computed-label">Daň (pred bonusom)</span><span class="computed-value">${fmt(dan)}</span></div>
+    <div class="computed-row"><span class="computed-label">Daňový bonus na deti</span><span class="computed-value">${fmt(bonus)}</span></div>
+    <div class="computed-row"><span class="computed-label">Daň po bonuse</span><span class="computed-value">${fmt(dan_po_bonuse)}</span></div>
+    <div class="computed-row"><span class="computed-label">Zrazené preddavky §5</span><span class="computed-value">${fmt(celk_pred5)}</span></div>
+    <div class="computed-row"><span class="computed-label">DAŇ NA ÚHRADU / PREPLATOK</span><span class="computed-value highlight">${dan_na_uhradu > 0 ? fmt(dan_na_uhradu)+' (na úhradu)' : fmt(preplatok)+' (preplatok)'}</span></div>
+  `;
+}
+
+// ——— SUMMARY ———
+function buildSummary() {
+  calc5(); calc();
+  const t = document.getElementById('sumTable');
+  t.innerHTML = `
+    <tr class="section-sep"><td colspan="3">Príjmy zo závislej činnosti §5</td></tr>
+    <tr><td>r.36</td><td>Príjmy §5 brutto spolu</td><td>${fmt(C.celk_p5)}</td></tr>
+    <tr><td>r.37</td><td>Povinné poistné (ZP+SP) zrazené</td><td>${fmt(C.celk_poi5)}</td></tr>
+    <tr><td>r.38</td><td>ČZD §5</td><td>${fmt(C.czd_5)}</td></tr>
+    <tr><td>r.39</td><td>Zrazené preddavky na daň</td><td>${fmt(C.celk_pred5)}</td></tr>
+    <tr class="section-sep"><td colspan="3">Príjmy z podnikania §6</td></tr>
+    <tr><td>r.02</td><td>Príjmy zo živnosti (§6 ods.1)</td><td>${fmt(C.p_zivnost)}</td></tr>
+    <tr><td>r.03</td><td>Príjmy iná SZČO (§6 ods.2)</td><td>${fmt(C.p_ina)}</td></tr>
+    <tr><td>r.10</td><td>Príjmy §6 spolu</td><td>${fmt(C.celk_prijmy_6)}</td></tr>
+    <tr><td></td><td>Výdavky (paušál 60%)</td><td>${fmt(C.vydavky_zivnost+C.vydavky_ina)}</td></tr>
+    <tr><td>r.11</td><td>Sociálne poistenie</td><td>${fmt(C.socialne)}</td></tr>
+    <tr><td>r.13</td><td>Zdravotné poistenie</td><td>${fmt(C.zdravotne)}</td></tr>
+    <tr><td>r.55</td><td>ČZD §6</td><td>${fmt(C.czd_6)}</td></tr>
+    <tr class="section-sep"><td colspan="3">Nezdaniteľné časti (§11)</td></tr>
+    <tr><td>r.30</td><td>NČZD na daňovníka</td><td>${fmt(C.nczd_dankovnik_suma)}</td></tr>
+    <tr><td>r.31</td><td>NČZD na manžel/ku</td><td>${fmt(C.nczd_manzel)}</td></tr>
+    <tr><td></td><td>III. pilier (max 180 €)</td><td>${fmt(C.iii)}</td></tr>
+    <tr class="section-sep"><td colspan="3">Výpočet dane</td></tr>
+    <tr><td>r.80</td><td>Základ dane po odpočtoch</td><td>${fmt(C.zd_po_nczd)}</td></tr>
+    <tr><td>r.105</td><td>Daň (19% / 25%)</td><td>${fmt(C.dan)}</td></tr>
+    <tr><td>r.107</td><td>Daňový bonus na deti</td><td>−${fmt(C.bonus)}</td></tr>
+    <tr><td></td><td>Daň po bonuse</td><td>${fmt(C.dan_po_bonuse)}</td></tr>
+    <tr><td>r.112</td><td>Zrazené preddavky §5</td><td>−${fmt(C.celk_pred5)}</td></tr>
+    ${C.dan_na_uhradu > 0
+      ? `<tr class="total"><td>r.125</td><td><strong>DAŇ NA ÚHRADU</strong></td><td>${fmt(C.dan_na_uhradu)}</td></tr>`
+      : `<tr class="total"><td>r.130</td><td><strong>DAŇOVÝ PREPLATOK</strong></td><td>${fmt(C.preplatok)}</td></tr>`
+    }
+  `;
+  generateXMLPreview();
+}
+
+// ——— XML ———
+function generateXMLPreview() {
+  const xml = buildXML();
+  const el = document.getElementById('xmlOut');
+  el.innerHTML = xml
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/&lt;(\/?[\w:]+)/g,'<span style="color:#f75f5f">&lt;$1</span>')
+    .replace(/"([^"]*)"/g,'"<span style="color:#3ecf8e">$1</span>"');
+}
+
+function buildXML() {
+  const now = new Date().toISOString().split('T')[0];
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const n2 = n => (n||0).toFixed(2);
+  const dic = document.getElementById('dic').value;
+  const meno = document.getElementById('meno').value;
+  const priezvisko = document.getElementById('priezvisko').value;
+  const rc = document.getElementById('rc').value.replace('/','');
+  const ulica = document.getElementById('ulica').value;
+  const psc = document.getElementById('psc').value.replace(' ','');
+  const obec = document.getElementById('obec').value;
+  const druhDP = document.getElementById('druhDP').value;
+  const nace = document.getElementById('nace').value;
+  const pausalne = rv('vydavky_zivnost')==='pausalne' || rv('vydavky_ina')==='pausalne';
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<DPFOBv25 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Identifikacia>
+    <DruhDP>${esc(druhDP)}</DruhDP>
+    <DatumPodania>${now}</DatumPodania>
+    <ZdaňovacieObdobieOd>2025-01-01</ZdaňovacieObdobieOd>
+    <ZdaňovacieObdobieDo>2025-12-31</ZdaňovacieObdobieDo>
+  </Identifikacia>
+  <IOddiel>
+    <r01_DIC>${esc(dic)}</r01_DIC>
+    <r03_NACE>${esc(nace)}</r03_NACE>
+    <r04_Priezvisko>${esc(priezvisko)}</r04_Priezvisko>
+    <r05_Meno>${esc(meno)}</r05_Meno>
+    <r06_TitulPred>${esc(document.getElementById('titul_pred').value)}</r06_TitulPred>
+    <r06_TitulZa>${esc(document.getElementById('titul_za').value)}</r06_TitulZa>
+    <r09_RodneCislo>${esc(rc)}</r09_RodneCislo>
+    <r07_Ulica>${esc(ulica)}</r07_Ulica>
+    <r08_PSC>${esc(psc)}</r08_PSC>
+    <r08_Obec>${esc(obec)}</r08_Obec>
+    <r27_Telefon>${esc(document.getElementById('telefon').value)}</r27_Telefon>
+    <r28_Email>${esc(document.getElementById('email').value)}</r28_Email>
+  </IOddiel>
+  <VOddiel>
+    <r36_UhrnPrijmovZC>${n2(C.celk_p5)}</r36_UhrnPrijmovZC>
+    <r36a_PrijmyDohody>${n2(C.p5_1_druh==='dohoda'?(C.p5_1_prijmy||0):0)}</r36a_PrijmyDohody>
+    <r37_UhrnPoistneho>${n2(C.celk_poi5)}</r37_UhrnPoistneho>
+    <r38_CZD_par5>${n2(C.czd_5)}</r38_CZD_par5>
+    <r39_PrisluchajucePreddavky>${n2(C.celk_pred5)}</r39_PrisluchajucePreddavky>
+  </VOddiel>
+  <VIOddiel>
+    <Tabulka1>
+      <r02_PrijmyZivnost>${n2(C.p_zivnost)}</r02_PrijmyZivnost>
+      <r03_PrijmyInaSZCO>${n2(C.p_ina)}</r03_PrijmyInaSZCO>
+      <r10_PrijmySpolu>${n2(C.celk_prijmy_6)}</r10_PrijmySpolu>
+      <r10_VydavkySpolu>${n2(C.celk_vydavky_6)}</r10_VydavkySpolu>
+      <VydavkyPercentom_par6ods10>${pausalne}</VydavkyPercentom_par6ods10>
+    </Tabulka1>
+    <r11_SocialnePoistenie>${n2(C.socialne)}</r11_SocialnePoistenie>
+    <r13_ZdravotnePoistenie>${n2(C.zdravotne)}</r13_ZdravotnePoistenie>
+    <r14_ZPPrisluchajuceKZO>${n2(C.zdravotne)}</r14_ZPPrisluchajuceKZO>
+    <r55_CZD_par6>${n2(C.czd_6)}</r55_CZD_par6>
+  </VIOddiel>
+  <IXOddiel>
+    <r30_NCZDNaDankovnika>${n2(C.nczd_dankovnik_suma)}</r30_NCZDNaDankovnika>
+    <r31_NCZDNaManzela>${n2(C.nczd_manzel)}</r31_NCZDNaManzela>
+    <IIIPilier>${n2(C.iii)}</IIIPilier>
+    <CelkoveNCZD>${n2(C.celk_nczd)}</CelkoveNCZD>
+  </IXOddiel>
+  <XIIIOddiel>
+    <r80_ZakladDane>${n2(C.zd_po_nczd)}</r80_ZakladDane>
+    <r105_Dan>${n2(C.dan)}</r105_Dan>
+    <r107_DanovyBonus>${n2(C.bonus)}</r107_DanovyBonus>
+    <r108_DanPoBonuse>${n2(C.dan_po_bonuse)}</r108_DanPoBonuse>
+    <r112_ZrazenePraddavky>${n2(C.celk_pred5)}</r112_ZrazenePraddavky>
+    <r125_DanNaUhradu>${n2(C.dan_na_uhradu)}</r125_DanNaUhradu>
+    <r130_Preplatok>${n2(C.preplatok)}</r130_Preplatok>
+  </XIIIOddiel>
+  <Priloha4>
+    <SZCO_SocialnePoistenie>${n2(C.socialne)}</SZCO_SocialnePoistenie>
+    <SZCO_ZdravotnePoistenie>${n2(C.zdravotne)}</SZCO_ZdravotnePoistenie>
+    <ZC_SocialnePoistenie>${n2(C.celk_poi5)}</ZC_SocialnePoistenie>
+  </Priloha4>
+</DPFOBv25>`;
+}
+
+function generateXML() {
+  calc5(); calc();
+  const xml = buildXML();
+  const blob = new Blob([xml],{type:'application/xml'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `DPFOBv25_${document.getElementById('priezvisko').value||'dankovnik'}_2025.xml`;
+  a.click();
+  URL.revokeObjectURL(url);
+  generateXMLPreview();
+}
+
+// ——— PDF ———
+function generatePDF() {
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const meno = document.getElementById('meno').value;
+  const priezvisko = document.getElementById('priezvisko').value;
+  const dic = document.getElementById('dic').value;
+  const now = new Date().toLocaleDateString('sk-SK');
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(15);
+  doc.setTextColor(20,30,80);
+  doc.text('DPFO – Typ B / Zdaňovacie obdobie 2025',20,24);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(100);
+  doc.text(`Daňovník: ${priezvisko} ${meno}   DIČ: ${dic}   Vygenerované: ${now}`,20,31);
+  doc.text('Tlačivo DPFOBv25 (MF/012186/2025-721)  |  Helwitax s.r.o.  |  helwitax.sk',20,36);
+  doc.setDrawColor(180,190,220);
+  doc.line(20,40,190,40);
+
+  const rows = [
+    ['PRÍJMY ZO ZÁVISLEJ ČINNOSTI §5','',true],
+    ['Príjmy §5 brutto (r.36)',fmt(C.celk_p5),false],
+    ['Povinné poistné ZC (r.37)',fmt(C.celk_poi5),false],
+    ['ČZD §5 (r.38)',fmt(C.czd_5),true],
+    ['Zrazené preddavky na daň (r.39)',fmt(C.celk_pred5),false],
+    ['PRÍJMY Z PODNIKANIA §6','',true],
+    ['Príjmy zo živnosti §6 ods.1 (r.02)',fmt(C.p_zivnost),false],
+    ['Príjmy iná SZČO §6 ods.2 (r.03)',fmt(C.p_ina),false],
+    ['Výdavky §6 (paušál + odvody)',fmt(C.celk_vydavky_6),false],
+    ['ČZD §6 (r.55)',fmt(C.czd_6),true],
+    ['NEZDANITEĽNÉ ČASTI (§11)','',true],
+    ['NČZD na daňovníka (r.30)',fmt(C.nczd_dankovnik_suma),false],
+    ['NČZD na manžel/ku (r.31)',fmt(C.nczd_manzel),false],
+    ['III. pilier (max 180 €)',fmt(C.iii),false],
+    ['VÝPOČET DANE','',true],
+    ['Základ dane po odpočtoch (r.80)',fmt(C.zd_po_nczd),true],
+    ['Daň 19%/25% (r.105)',fmt(C.dan),false],
+    ['Daňový bonus na deti (r.107)','−'+fmt(C.bonus),false],
+    ['Zrazené preddavky §5 (r.112)','−'+fmt(C.celk_pred5),false],
+    [C.dan_na_uhradu>0?'DAŇ NA ÚHRADU (r.125)':'DAŇOVÝ PREPLATOK (r.130)',
+     C.dan_na_uhradu>0?fmt(C.dan_na_uhradu):fmt(C.preplatok),true],
+  ];
+
+  let y=48;
+  rows.forEach(([lbl,val,bold])=>{
+    if(bold && val==='') {
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica','bold');
+      doc.setTextColor(50,70,160);
+      doc.setFillColor(230,234,255);
+      doc.rect(20,y-4,170,7,'F');
+      doc.text(lbl,22,y);
+      y+=9;
+    } else {
+      doc.setFont('helvetica', bold?'bold':'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(bold?20:50, bold?40:50, bold?100:70);
+      doc.text(lbl,22,y);
+      doc.text(val,188,y,{align:'right'});
+      doc.setDrawColor(220,224,235);
+      doc.line(20,y+2,190,y+2);
+      y+=8;
+    }
+  });
+
+  doc.setFontSize(7.5);
+  doc.setTextColor(160);
+  doc.text('* Informatívny súhrn. Pre podanie použite XML export na Portáli finančnej správy.',20,285);
+  doc.text('Vygenerované: Helwitax DPFO-B aplikácia  |  helwitax.sk',20,290);
+  doc.save(`DPFOBv25_suhrn_${priezvisko}_2025.pdf`);
+}
+
+// Init
+calc5(); calc();
+</script>
+</body>
+</html>
