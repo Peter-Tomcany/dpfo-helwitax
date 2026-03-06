@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DPFO Typ B 2025 – Helwitax</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
   :root {
@@ -611,86 +612,338 @@ function generateXMLPreview() {
 }
 
 function buildXML() {
-  const now = new Date().toISOString().split('T')[0];
-  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const n2 = n => (n||0).toFixed(2);
-  const dic = document.getElementById('dic').value;
-  const meno = document.getElementById('meno').value;
-  const priezvisko = document.getElementById('priezvisko').value;
-  const rc = document.getElementById('rc').value.replace('/','');
-  const ulica = document.getElementById('ulica').value;
-  const psc = document.getElementById('psc').value.replace(' ','');
-  const obec = document.getElementById('obec').value;
-  const druhDP = document.getElementById('druhDP').value;
-  const nace = document.getElementById('nace').value;
-  const pausalne = rv('vydavky_zivnost')==='pausalne' || rv('vydavky_ina')==='pausalne';
+  const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const n2 = n => (n && n !== 0) ? Number(n).toFixed(2) : '';
+  const n2z = n => Number(n||0).toFixed(2); // vždy číslo aj ak 0
+  const dnes = new Date();
+  const datumVyhl = `${String(dnes.getDate()).padStart(2,'0')}.${String(dnes.getMonth()+1).padStart(2,'0')}.${dnes.getFullYear()}`;
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<DPFOBv25 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <Identifikacia>
-    <DruhDP>${esc(druhDP)}</DruhDP>
-    <DatumPodania>${now}</DatumPodania>
-    <ZdaňovacieObdobieOd>2025-01-01</ZdaňovacieObdobieOd>
-    <ZdaňovacieObdobieDo>2025-12-31</ZdaňovacieObdobieDo>
-  </Identifikacia>
-  <IOddiel>
-    <r01_DIC>${esc(dic)}</r01_DIC>
-    <r03_NACE>${esc(nace)}</r03_NACE>
-    <r04_Priezvisko>${esc(priezvisko)}</r04_Priezvisko>
-    <r05_Meno>${esc(meno)}</r05_Meno>
-    <r06_TitulPred>${esc(document.getElementById('titul_pred').value)}</r06_TitulPred>
-    <r06_TitulZa>${esc(document.getElementById('titul_za').value)}</r06_TitulZa>
-    <r09_RodneCislo>${esc(rc)}</r09_RodneCislo>
-    <r07_Ulica>${esc(ulica)}</r07_Ulica>
-    <r08_PSC>${esc(psc)}</r08_PSC>
-    <r08_Obec>${esc(obec)}</r08_Obec>
-    <r27_Telefon>${esc(document.getElementById('telefon').value)}</r27_Telefon>
-    <r28_Email>${esc(document.getElementById('email').value)}</r28_Email>
-  </IOddiel>
-  <VOddiel>
-    <r36_UhrnPrijmovZC>${n2(C.celk_p5)}</r36_UhrnPrijmovZC>
-    <r36a_PrijmyDohody>${n2(C.p5_1_druh==='dohoda'?(C.p5_1_prijmy||0):0)}</r36a_PrijmyDohody>
-    <r37_UhrnPoistneho>${n2(C.celk_poi5)}</r37_UhrnPoistneho>
-    <r38_CZD_par5>${n2(C.czd_5)}</r38_CZD_par5>
-    <r39_PrisluchajucePreddavky>${n2(C.celk_pred5)}</r39_PrisluchajucePreddavky>
-  </VOddiel>
-  <VIOddiel>
-    <Tabulka1>
-      <r02_PrijmyZivnost>${n2(C.p_zivnost)}</r02_PrijmyZivnost>
-      <r03_PrijmyInaSZCO>${n2(C.p_ina)}</r03_PrijmyInaSZCO>
-      <r10_PrijmySpolu>${n2(C.celk_prijmy_6)}</r10_PrijmySpolu>
-      <r10_VydavkySpolu>${n2(C.celk_vydavky_6)}</r10_VydavkySpolu>
-      <VydavkyPercentom_par6ods10>${pausalne}</VydavkyPercentom_par6ods10>
-    </Tabulka1>
-    <r11_SocialnePoistenie>${n2(C.socialne)}</r11_SocialnePoistenie>
-    <r13_ZdravotnePoistenie>${n2(C.zdravotne)}</r13_ZdravotnePoistenie>
-    <r14_ZPPrisluchajuceKZO>${n2(C.zdravotne)}</r14_ZPPrisluchajuceKZO>
-    <r55_CZD_par6>${n2(C.czd_6)}</r55_CZD_par6>
-  </VIOddiel>
-  <IXOddiel>
-    <r30_NCZDNaDankovnika>${n2(C.nczd_dankovnik_suma)}</r30_NCZDNaDankovnika>
-    <r31_NCZDNaManzela>${n2(C.nczd_manzel)}</r31_NCZDNaManzela>
-    <IIIPilier>${n2(C.iii)}</IIIPilier>
-    <CelkoveNCZD>${n2(C.celk_nczd)}</CelkoveNCZD>
-  </IXOddiel>
-  <XIIIOddiel>
-    <r78_ZD_par4a>${n2(C.zd_a)}</r78_ZD_par4a>
-    <r81_Dan_par4a>${n2(C.dan_a)}</r81_Dan_par4a>
-    <r92_ZD_par4b>${n2(C.zd_b)}</r92_ZD_par4b>
-    <r96_Dan_par4b>${n2(C.dan_b)}</r96_Dan_par4b>
-    <r105_Dan>${n2(C.dan)}</r105_Dan>
-    <r107_DanovyBonus>${n2(C.bonus)}</r107_DanovyBonus>
-    <r108_DanPoBonuse>${n2(C.dan_po_bonuse)}</r108_DanPoBonuse>
-    <r112_ZrazenePraddavky>${n2(C.celk_pred5)}</r112_ZrazenePraddavky>
-    <r125_DanNaUhradu>${n2(C.dan_na_uhradu)}</r125_DanNaUhradu>
-    <r130_Preplatok>${n2(C.preplatok)}</r130_Preplatok>
-  </XIIIOddiel>
-  <Priloha4>
-    <SZCO_SocialnePoistenie>${n2(C.socialne)}</SZCO_SocialnePoistenie>
-    <SZCO_ZdravotnePoistenie>${n2(C.zdravotne)}</SZCO_ZdravotnePoistenie>
-    <ZC_SocialnePoistenie>${n2(C.celk_poi5)}</ZC_SocialnePoistenie>
-  </Priloha4>
-</DPFOBv25>`;
+  const dic    = document.getElementById('dic').value;
+  const meno   = document.getElementById('meno').value;
+  const priezv = document.getElementById('priezvisko').value;
+  const titul  = document.getElementById('titul_pred').value;
+  const titulZ = document.getElementById('titul_za').value;
+  const ulica  = document.getElementById('ulica').value;
+  const psc    = document.getElementById('psc').value.replace(/\s/g,'');
+  const obec   = document.getElementById('obec').value;
+  const tel    = document.getElementById('telefon').value;
+  const email  = document.getElementById('email').value;
+  const nace   = document.getElementById('nace').value || '';
+  // NACE rozdeliť na k1/k2/k3 napr. "43.12.0" -> 43, 12, 0
+  const naceParts = nace.replace(/\s/g,'').split('.');
+  const naceK1 = naceParts[0]||'';
+  const naceK2 = naceParts[1]||'';
+  const naceK3 = naceParts[2]||'';
+
+  const druhDP = document.getElementById('druhDP').value;
+  const rdp = druhDP==='DP'?'1':'0';
+  const odp = druhDP==='ODP'?'1':'0';
+  const ddp = druhDP==='DDP'?'1':'0';
+
+  const pausalne_zivnost = rv('vydavky_zivnost')==='pausalne' ? 1 : 0;
+  const pausalne_ina     = rv('vydavky_ina')==='pausalne' ? 1 : 0;
+  const pausalne = (pausalne_zivnost || pausalne_ina) ? 1 : 0;
+
+  // Výdavky paušál pre tabulka1b (60% zo živnosti)
+  const vydPauZivnost = pausalne_zivnost ? Math.min(C.p_zivnost*0.60, 20000) : 0;
+  const vydPauIna     = pausalne_ina     ? Math.min(C.p_ina*0.60, 20000)     : 0;
+
+  // §5 preddavky – len ak > 0
+  const r36  = C.celk_p5   > 0 ? n2(C.celk_p5)   : '';
+  const r36a = '';
+  const r37  = C.celk_poi5 > 0 ? n2(C.celk_poi5) : '';
+  const r38  = C.czd_5     > 0 ? n2(C.czd_5)     : '';
+  const r39p = C.celk_pred5> 0 ? n2(C.celk_pred5): '';
+
+  return `<?xml version="1.0" encoding="utf-8"?>
+<dokument>
+<hlavicka>
+\t<dic>${esc(dic)}</dic>
+\t<datumNarodenia></datumNarodenia>
+\t<typDP>
+\t\t<rdp>${rdp}</rdp>
+\t\t<odp>${odp}</odp>
+\t\t<ddp>${ddp}</ddp>
+\t</typDP>
+\t<zdanovacieObdobie>
+\t\t<rok>2025</rok>
+\t\t<datumDDP></datumDDP>
+\t</zdanovacieObdobie>
+\t<skNace>
+\t\t<k1>${esc(naceK1)}</k1>
+\t\t<k2>${esc(naceK2)}</k2>
+\t\t<k3>${esc(naceK3)}</k3>
+\t\t<cinnost></cinnost>
+\t</skNace>
+\t<priezvisko>${esc(priezv)}</priezvisko>
+\t<meno>${esc(meno)}</meno>
+\t<titul>${esc(titul)}</titul>
+\t<titulZa>${esc(titulZ)}</titulZa>
+\t<adresaTrvPobytu>
+\t\t<ulica>${esc(ulica)}</ulica>
+\t\t<cislo></cislo>
+\t\t<psc>${esc(psc)}</psc>
+\t\t<obec>${esc(obec)}</obec>
+\t\t<stat>Slovensko</stat>
+\t</adresaTrvPobytu>
+\t<nerezident>
+\t\t<nerezident>0</nerezident>
+\t\t<datumOd></datumOd>
+\t\t<datumDo></datumDo>
+\t\t<TIN></TIN>
+\t</nerezident>
+\t<prepojeniePar2>0</prepojeniePar2>
+\t<adresaObvPobytu>
+\t\t<ulica></ulica>
+\t\t<cislo></cislo>
+\t\t<psc></psc>
+\t\t<obec></obec>
+\t</adresaObvPobytu>
+\t<zastupca>
+\t<priezvisko></priezvisko>
+\t<meno></meno>
+\t<titul></titul>
+\t<titulZa></titulZa>
+\t<rodneCislo></rodneCislo>
+\t<ulica></ulica>
+\t<cislo></cislo>
+\t<psc></psc>
+\t<obec></obec>
+\t<stat></stat>
+\t<tel>${esc(tel)}</tel>
+\t<email>${esc(email)}</email>
+\t</zastupca>
+</hlavicka>
+<telo>
+\t<r29>0</r29>
+\t<r30></r30>
+\t<r31>
+\t<priezviskoMeno></priezviskoMeno>
+\t<rodneCislo></rodneCislo>
+\t</r31>
+\t<r32>
+\t<uplatnujemNCZDNaManzela>${C.nczd_manzel > 0 ? 1 : 0}</uplatnujemNCZDNaManzela>
+\t<vlastnePrijmy></vlastnePrijmy>
+\t<pocetMesiacov></pocetMesiacov>
+\t</r32>
+\t<r33>
+\t\t<dieta>
+\t\t\t<priezviskoMeno></priezviskoMeno>
+\t\t\t<rodneCislo></rodneCislo>
+\t\t\t<m00>0</m00>
+\t\t\t<m01>0</m01><m02>0</m02><m03>0</m03><m04>0</m04><m05>0</m05>
+\t\t\t<m06>0</m06><m07>0</m07><m08>0</m08><m09>0</m09><m10>0</m10>
+\t\t\t<m11>0</m11><m12>0</m12>
+\t\t</dieta>
+\t</r33>
+\t<r33a>0</r33a>
+\t<uplatnujemPar33Ods8>0</uplatnujemPar33Ods8>
+\t<r34>
+\t\t<priezviskoMeno></priezviskoMeno>
+\t\t<rodneCislo></rodneCislo>
+\t\t<m00>0</m00><m01>0</m01><m02>0</m02><m03>0</m03><m04>0</m04>
+\t\t<m05>0</m05><m06>0</m06><m07>0</m07><m08>0</m08><m09>0</m09>
+\t\t<m10>0</m10><m11>0</m11><m12>0</m12>
+\t\t<druhaOsobaPodalaDPvSR>0</druhaOsobaPodalaDPvSR>
+\t\t<dokladRocZuct>0</dokladRocZuct>
+\t\t<dokladVyskaDane>0</dokladVyskaDane>
+\t</r34>
+\t<r34a></r34a>
+\t<r35>
+\t<uplatDanBonusZaplatUroky>0</uplatDanBonusZaplatUroky>
+\t<zaplateneUroky></zaplateneUroky>
+\t<pocetMesiacov></pocetMesiacov>
+\t<datumZacatiaUroceniaUveru></datumZacatiaUroceniaUveru>
+\t<datumUzavretiaZmluvyOUvere></datumUzavretiaZmluvyOUvere>
+\t</r35>
+\t<r36>${r36}</r36>
+\t<r36a>${r36a}</r36a>
+\t<r37>${r37}</r37>
+\t<r38>${r38}</r38>
+\t<tabulka1>
+\t\t<t1r1><s1></s1><s2></s2></t1r1>
+\t\t<t1r2>
+\t\t\t<s1>${C.p_zivnost > 0 ? n2(C.p_zivnost) : ''}</s1>
+\t\t\t<s2></s2>
+\t\t</t1r2>
+\t\t<t1r3>
+\t\t\t<s1>${C.p_ina > 0 ? n2(C.p_ina) : ''}</s1>
+\t\t\t<s2></s2>
+\t\t</t1r3>
+\t\t<t1r4><s1></s1><s2></s2></t1r4>
+\t\t<t1r5><s1></s1><s2></s2></t1r5>
+\t\t<t1r6><s1></s1><s2></s2></t1r6>
+\t\t<t1r7><s1></s1><s2></s2></t1r7>
+\t\t<t1r8><s1></s1><s2></s2></t1r8>
+\t\t<t1r9><s1></s1><s2></s2></t1r9>
+\t\t<t1r10>
+\t\t\t<s1>${n2(C.celk_prijmy_6)}</s1>
+\t\t\t<s2>${pausalne ? n2(C.celk_vydavky_6) : ''}</s2>
+\t\t</t1r10>
+\t\t<t1r11><s1></s1><s2></s2></t1r11>
+\t\t<t1r12><s1></s1><s2></s2></t1r12>
+\t\t<t1r13><s1></s1><s2></s2></t1r13>
+\t</tabulka1>
+\t<mikrodanovnikPar2w>0</mikrodanovnikPar2w>
+\t<vydavkyPar6ods11_ods1a2>0</vydavkyPar6ods11_ods1a2>
+\t<vydavkyPar6ods11_ods3>0</vydavkyPar6ods11_ods3>
+\t<vydavkyPar6ods11_ods4>0</vydavkyPar6ods11_ods4>
+\t<vydavkyPar6ods10_ods1a2>${pausalne}</vydavkyPar6ods10_ods1a2>
+\t<vydavkyPar6ods10_ods4>0</vydavkyPar6ods10_ods4>
+\t<vydavkyPoistPar6ods11_ods1a2>${n2z(C.celkove_odvody)}</vydavkyPoistPar6ods11_ods1a2>
+\t<uplatnujemPar17ods17_ods1a2>0</uplatnujemPar17ods17_ods1a2>
+\t<uplatnujemPar17ods17_ods3a4>0</uplatnujemPar17ods17_ods3a4>
+\t<ukoncujemUplatnovaniePar17ods17_ods1a2>0</ukoncujemUplatnovaniePar17ods17_ods1a2>
+\t<ukoncujemUplatnovaniePar17ods17_ods3a4>0</ukoncujemUplatnovaniePar17ods17_ods3a4>
+\t<tabulka1a>
+\t\t<t1r1><s1></s1><s2></s2></t1r1>
+\t\t<t1r2><s1></s1><s2></s2></t1r2>
+\t\t<t1r3><s1></s1><s2></s2></t1r3>
+\t\t<t1r4><s1></s1><s2></s2></t1r4>
+\t\t<t1r5><s1></s1><s2></s2></t1r5>
+\t\t<t1r6><s1></s1><s2></s2></t1r6>
+\t</tabulka1a>
+\t<tabulka1b>
+\t\t<t1r1><s1></s1><s2></s2></t1r1>
+\t\t<t1r2>
+\t\t\t<s1></s1>
+\t\t\t<s2>${pausalne ? n2(vydPauZivnost + vydPauIna) : ''}</s2>
+\t\t</t1r2>
+\t</tabulka1b>
+\t<r39>${n2(C.celk_prijmy_6)}</r39>
+\t<r40>${n2(C.celk_vydavky_6)}</r40>
+\t<r41>${n2(C.czd_6)}</r41>
+\t<r42></r42>
+\t<r43></r43>
+\t<r44></r44>
+\t<r45>${n2(C.czd_6)}</r45>
+\t<r46></r46>
+\t<r47><rok>2020</rok><udaje><r02></r02><r03></r03><r04></r04></udaje></r47>
+\t<r48><rok>2021</rok><udaje><r02></r02><r03></r03><r04></r04></udaje></r48>
+\t<r49><rok>2022</rok><udaje><r02></r02><r03></r03><r04></r04></udaje></r49>
+\t<r50><rok>2023</rok><udaje><r02></r02><r03></r03><r04></r04></udaje></r50>
+\t<r50a><rok>2024</rok><udaje><r02></r02><r04></r04></udaje></r50a>
+\t<r51></r51><r52></r52><r53></r53><r54></r54><r54a></r54a>
+\t<r55>${n2(C.czd_6)}</r55>
+\t<r56></r56>
+\t<r57>${n2(C.czd_6)}</r57>
+\t<r58></r58><r59></r59><r60></r60>
+\t<r61></r61><r62></r62><r63></r63><r64></r64><r65></r65>
+\t<tabulka2>
+\t\t<t2r1><s1></s1><s2></s2></t2r1><t2r2><s1></s1><s2></s2></t2r2>
+\t\t<t2r3><s1></s1><s2></s2></t2r3><t2r4><s1></s1><s2></s2></t2r4>
+\t\t<t2r5><s1></s1><s2></s2></t2r5><t2r6><s1></s1><s2></s2></t2r6>
+\t\t<t2r7><s1></s1><s2></s2></t2r7><t2r8><s1></s1><s2></s2></t2r8>
+\t\t<t2r9><s1></s1><s2></s2></t2r9><t2r10><s1></s1><s2></s2></t2r10>
+\t\t<t2r11><s1></s1><s2></s2></t2r11><t2r12><s1></s1></t2r12>
+\t</tabulka2>
+\t<r66></r66><r67></r67><r68></r68>
+\t<tabulka3>
+\t\t<t3r1><s1></s1><s2></s2></t3r1><t3r2><s1></s1><s2></s2></t3r2>
+\t\t<t3r3><s1></s1><s2></s2></t3r3><t3r4><s1></s1><s2></s2></t3r4>
+\t\t<t3r5><s1></s1><s2></s2></t3r5><t3r6><s1></s1><s2></s2></t3r6>
+\t\t<t3r7><s1></s1><s2></s2></t3r7><t3r8><s1></s1><s2></s2></t3r8>
+\t\t<t3r9><s1></s1><s2></s2></t3r9><t3r10><s1></s1><s2></s2></t3r10>
+\t\t<t3r11><s1></s1><s2></s2></t3r11><t3r12><s1></s1><s2></s2></t3r12>
+\t\t<t3r13><s1></s1><s2></s2></t3r13><t3r14><s1></s1><s2></s2></t3r14>
+\t\t<t3r15><s1></s1><s2></s2></t3r15><t3r16><s1></s1><s2></s2></t3r16>
+\t\t<t3r17><s1></s1><s2></s2></t3r17><t3r18><s1></s1></t3r18>
+\t\t<t3r19><s1></s1><s2></s2></t3r19>
+\t</tabulka3>
+\t<r69></r69><r70></r70><r71></r71>
+\t<r72>${n2(C.uhrnZD_aktivny)}</r72>
+\t<r73>${n2(C.nczd_dankovnik_suma)}</r73>
+\t<r74>${C.nczd_manzel > 0 ? n2(C.nczd_manzel) : ''}</r74>
+\t<r75>${C.iii > 0 ? n2(C.iii) : ''}</r75>
+\t<r77>${n2(C.celk_nczd)}</r77>
+\t<r78>${C.czd_5 > 0 ? n2(C.zd_a) : ''}</r78>
+\t<r79></r79>
+\t<r80>${C.czd_5 > 0 ? n2(C.zd_a) : ''}</r80>
+\t<r81>${C.czd_5 > 0 ? n2(C.dan_a) : ''}</r81>
+\t<r82></r82><r83></r83><r84></r84><r85></r85><r86></r86>
+\t<r87></r87><r88></r88><r89></r89>
+\t<r90>${C.czd_5 > 0 ? n2(C.dan_a) : ''}</r90>
+\t<r91>${n2(C.celk_nczd - Math.min(C.celk_nczd, C.czd_5))}</r91>
+\t<r92>${n2(C.zd_b)}</r92>
+\t<r93></r93>
+\t<r94>${n2(C.zd_b)}</r94>
+\t<r95>${n2(C.celk_prijmy_6)}</r95>
+\t<r96>${n2(C.dan_b)}</r96>
+\t<r97></r97><r98></r98><r99></r99>
+\t<r100></r100><r101></r101><r102></r102><r103></r103><r104></r104>
+\t<r105>${n2(C.dan)}</r105>
+\t<r106></r106>
+\t<r107>${C.bonus > 0 ? n2(C.bonus) : ''}</r107>
+\t<r108></r108><r109></r109><r110></r110><r111></r111>
+\t<r112></r112><r113></r113><r114></r114><r115></r115>
+\t<r116>${n2(C.dan)}</r116>
+\t<r116a></r116a>
+\t<r117>${C.bonus > 0 ? n2(C.bonus) : ''}</r117>
+\t<r118>${n2(C.dan_po_bonuse)}</r118>
+\t<r119></r119><r120></r120>
+\t<r121>${C.bonus > C.dan ? n2(C.bonus - C.dan) : ''}</r121>
+\t<r122></r122><r123></r123>
+\t<r124>${n2(C.dan_po_bonuse)}</r124>
+\t<r125></r125><r126></r126><r127></r127><r128></r128>
+\t<r129></r129><r130></r130>
+\t<r131>${C.celk_pred5 > 0 ? n2(C.celk_pred5) : ''}</r131>
+\t<r132></r132><r133></r133><r134></r134>
+\t<r135>${C.dan_na_uhradu > 0 ? n2(C.dan_na_uhradu) : ''}</r135>
+\t<r136>${C.preplatok > 0 ? n2(C.preplatok) : ''}</r136>
+\t<r137></r137><r138></r138><r139></r139><r140></r140>
+\t<r141></r141><r142></r142><r143></r143><r144></r144>
+\t<r145></r145><r146></r146><r146a></r146a>
+\t<r147></r147><r148></r148>
+\t<r149>0</r149><r150></r150>
+\t<r151>
+\t\t<ico></ico>
+\t\t<splnam3per>0</splnam3per>
+\t\t<neuplatnujemPar50>0</neuplatnujemPar50>
+\t\t<obchodneMeno><riadok><![CDATA[]]></riadok></obchodneMeno>
+\t\t<suhlasSoZaslanim>0</suhlasSoZaslanim>
+\t</r151>
+\t<r152></r152>
+\t<r153>
+\t\t<neuplatnujemPar50aa>1</neuplatnujemPar50aa>
+\t\t<rodicA><rodneCislo></rodneCislo><priezvisko></priezvisko><meno></meno></rodicA>
+\t\t<rodicB><rodneCislo></rodneCislo><priezvisko></priezvisko><meno></meno></rodicB>
+\t\t<bolZverenyDoStarostlivosti>0</bolZverenyDoStarostlivosti>
+\t</r153>
+\t<osobitneZaznamy>
+\t\t<uvadza>0</uvadza>
+\t\t<udajeOprijmoch>
+\t\t\t<kodStatu></kodStatu><druhPrimuPar></druhPrimuPar>
+\t\t\t<druhPrimuOds></druhPrimuOds><druhPrimuPis></druhPrimuPis>
+\t\t\t<prijmy></prijmy><vydavky></vydavky><zTohoVydavky></zTohoVydavky>
+\t\t</udajeOprijmoch>
+\t\t<rekreaciaPar19ods2>0</rekreaciaPar19ods2>
+\t\t<rekreaciaSuma></rekreaciaSuma>
+\t\t<zaznamy><![CDATA[]]></zaznamy>
+\t</osobitneZaznamy>
+\t<r154>4</r154>
+\t<datumVyhlasenia>${datumVyhl}</datumVyhlasenia>
+\t<danovyPreplatokBonus>
+\t\t<vyplatitDanovyBonus>0</vyplatitDanovyBonus>
+\t\t<vyplatitDanovyBonusUroky>0</vyplatitDanovyBonusUroky>
+\t\t<vratitDanPreplatok>0</vratitDanPreplatok>
+\t\t<sposobPlatby><poukazka>0</poukazka><ucet>0</ucet><ucetZahranicie>0</ucetZahranicie></sposobPlatby>
+\t\t<bankovyUcet><IBAN></IBAN></bankovyUcet>
+\t\t<datum></datum>
+\t</danovyPreplatokBonus>
+\t<socZdravPoistenie>
+\t\t<pr1><s1></s1><s2></s2></pr1>
+\t\t<pr2></pr2><pr3></pr3><pr4></pr4><pr5></pr5><pr6></pr6>
+\t\t<pr7></pr7><pr8></pr8><pr9></pr9><pr10></pr10>
+\t\t<pr11>${C.socialne > 0 ? n2(C.socialne) : ''}</pr11>
+\t\t<pr12></pr12>
+\t\t<pr13>${C.zdravotne > 0 ? n2(C.zdravotne) : ''}</pr13>
+\t\t<pr14>${C.zdravotne > 0 ? n2(C.zdravotne) : ''}</pr14>
+\t\t<pr15></pr15>
+\t\t<priPrimoch6ods1a2VediemPU>0</priPrimoch6ods1a2VediemPU>
+\t\t<datum>${datumVyhl}</datum>
+\t</socZdravPoistenie>
+</telo>
+</dokument>`;
 }
 
 function generateXML() {
@@ -707,25 +960,11 @@ function generateXML() {
 }
 
 // ——— PDF ———
-function generatePDF() {
-  const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+async function generatePDF() {
   const meno = document.getElementById('meno').value;
   const priezvisko = document.getElementById('priezvisko').value;
   const dic = document.getElementById('dic').value;
   const now = new Date().toLocaleDateString('sk-SK');
-
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(15);
-  doc.setTextColor(20,30,80);
-  doc.text('DPFO – Typ B / Zdaňovacie obdobie 2025',20,24);
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(9);
-  doc.setTextColor(100);
-  doc.text(`Daňovník: ${priezvisko} ${meno}   DIČ: ${dic}   Vygenerované: ${now}`,20,31);
-  doc.text('Tlačivo DPFOBv25 (MF/012186/2025-721)  |  Helwitax s.r.o.  |  helwitax.sk',20,36);
-  doc.setDrawColor(180,190,220);
-  doc.line(20,40,190,40);
 
   const rows = [
     ['PRÍJMY ZO ZÁVISLEJ ČINNOSTI §5','',true],
@@ -739,48 +978,79 @@ function generatePDF() {
     ['Výdavky §6 (paušál + odvody)',fmt(C.celk_vydavky_6),false],
     ['ČZD §6 (r.55)',fmt(C.czd_6),true],
     ['NEZDANITEĽNÉ ČASTI (§11)','',true],
-    ['NČZD na daňovníka (r.30)',fmt(C.nczd_dankovnik_suma),false],
-    ['NČZD na manžel/ku (r.31)',fmt(C.nczd_manzel),false],
-    ['III. pilier (max 180 €)',fmt(C.iii),false],
+    ['NČZD na daňovníka (r.73)',fmt(C.nczd_dankovnik_suma),false],
+    ['NČZD na manžela/ku (r.74)',fmt(C.nczd_manzel),false],
+    ['III. pilier – max 180 € (r.75)',fmt(C.iii),false],
     ['VÝPOČET DANE','',true],
-    ['ZD §4a (§5 po NČZD) – r.78',fmt(C.zd_a),false],
-    ['Daň §4a 19%/25% – r.81',fmt(C.dan_a),false],
-    ['ZD §4b (§6 ods.1+2 po NČZD) – r.92',fmt(C.zd_b),false],
-    [`Daň §4b ${C.sadzba_b} – r.96`,fmt(C.dan_b),false],
-    ['Daň spolu – r.105',fmt(C.dan),true],
-    ['Daňový bonus na deti – r.107','−'+fmt(C.bonus),false],
-    ['Zrazené preddavky §5 – r.112','−'+fmt(C.celk_pred5),false],
+    ['ZD §4a – §5 po NČZD (r.78)',fmt(C.zd_a),false],
+    ['Daň §4a – 19%/25% (r.81)',fmt(C.dan_a),false],
+    ['ZD §4b – §6 ods.1+2 po NČZD (r.92)',fmt(C.zd_b),false],
+    [`Daň §4b – ${C.sadzba_b} (r.96)`,fmt(C.dan_b),false],
+    ['Daň spolu (r.105)',fmt(C.dan),true],
+    ['Daňový bonus na deti (r.117)','−'+fmt(C.bonus),false],
+    ['Zrazené preddavky §5 (r.131)','−'+fmt(C.celk_pred5),false],
     [C.dan_na_uhradu>0?'DAŇ NA ÚHRADU (r.135)':'DAŇOVÝ PREPLATOK (r.136)',
      C.dan_na_uhradu>0?fmt(C.dan_na_uhradu):fmt(C.preplatok),true],
   ];
 
-  let y=48;
-  rows.forEach(([lbl,val,bold])=>{
-    if(bold && val==='') {
-      doc.setFontSize(8.5);
-      doc.setFont('helvetica','bold');
-      doc.setTextColor(50,70,160);
-      doc.setFillColor(230,234,255);
-      doc.rect(20,y-4,170,7,'F');
-      doc.text(lbl,22,y);
-      y+=9;
-    } else {
-      doc.setFont('helvetica', bold?'bold':'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(bold?20:50, bold?40:50, bold?100:70);
-      doc.text(lbl,22,y);
-      doc.text(val,188,y,{align:'right'});
-      doc.setDrawColor(220,224,235);
-      doc.line(20,y+2,190,y+2);
-      y+=8;
-    }
-  });
+  // Vybuduj HTML pre rendering
+  const rowsHTML = rows.map(([lbl,val,bold]) => {
+    if(bold && val==='') return `
+      <tr style="background:#e6eaff;">
+        <td colspan="2" style="padding:6px 10px;font-weight:700;font-size:11px;color:#3246a0;letter-spacing:.05em;text-transform:uppercase;">${lbl}</td>
+      </tr>`;
+    return `
+      <tr style="border-bottom:1px solid #dde0eb;">
+        <td style="padding:5px 10px;font-size:12px;color:${bold?'#141e50':'#323246'};font-weight:${bold?'700':'400'};">${lbl}</td>
+        <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:12px;color:${bold?'#141e50':'#323246'};font-weight:${bold?'700':'400'};">${val}</td>
+      </tr>`;
+  }).join('');
 
-  doc.setFontSize(7.5);
-  doc.setTextColor(160);
-  doc.text('* Informatívny súhrn. Pre podanie použite XML export na Portáli finančnej správy.',20,285);
-  doc.text('Vygenerované: Helwitax DPFO-B aplikácia  |  helwitax.sk',20,290);
-  doc.save(`DPFOBv25_suhrn_${priezvisko}_2025.pdf`);
+  const html = `
+    <div style="width:794px;padding:40px 50px;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#222;">
+      <div style="border-bottom:2px solid #3246a0;padding-bottom:14px;margin-bottom:20px;">
+        <div style="font-size:20px;font-weight:700;color:#141e50;">DPFO – Typ B / Zdaňovacie obdobie 2025</div>
+        <div style="font-size:11px;color:#666;margin-top:4px;">Daňovník: <strong>${priezvisko} ${meno}</strong> &nbsp;|&nbsp; DIČ: <strong>${dic}</strong> &nbsp;|&nbsp; Vygenerované: ${now}</div>
+        <div style="font-size:10px;color:#999;margin-top:2px;">Tlačivo DPFOBv25 (MF/012186/2025-721) | Helwitax s.r.o. | helwitax.sk</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        ${rowsHTML}
+      </table>
+      <div style="margin-top:20px;font-size:9px;color:#aaa;border-top:1px solid #eee;padding-top:10px;">
+        * Informatívny súhrn. Pre podanie použite XML export na Portáli finančnej správy.<br>
+        Vygenerované: Helwitax DPFO-B aplikácia | helwitax.sk
+      </div>
+    </div>`;
+
+  // Vyrenderuj do skrytého elementu
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;left:-9999px;top:0;';
+  container.innerHTML = html;
+  document.body.appendChild(container);
+
+  try {
+    const canvas = await html2canvas(container.firstElementChild, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff'
+    });
+    const imgData = canvas.toDataURL('image/png');
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+    const pxToMm = 210 / canvas.width;
+    const imgH = canvas.height * pxToMm;
+    // Ak obsah presahuje 1 stranu, rozdeliť
+    const pageH = 297;
+    let y = 0;
+    while(y < imgH) {
+      if(y > 0) doc.addPage();
+      doc.addImage(imgData, 'PNG', 0, -y, 210, imgH);
+      y += pageH;
+    }
+    doc.save(`DPFOBv25_suhrn_${priezvisko}_2025.pdf`);
+  } finally {
+    document.body.removeChild(container);
+  }
 }
 
 // Init
