@@ -612,9 +612,10 @@
         <hr class="divider">
         <div class="grid grid-2" style="margin-bottom:16px">
           <div class="field">
-            <label>Príspevky III. pilier 2025 (€)</label>
-            <input type="number" id="iii_pilier" value="0" min="0" max="180" step="0.01" oninput="calc()">
-            <span class="field-note">Max. odpočet: 180 €</span>
+            <label>Príspevky III. pilier / DDS 2025 (€) – r.75</label>
+            <input type="number" id="iii_pilier" value="0" min="0" step="0.01" oninput="validateDDS(); calc()">
+            <span class="field-note">Príspevky na celoeurópsky osobný dôchodkový produkt a príspevky na doplnkové dôchodkové sporenie (§ 11 ods. 8). Max. odpočet: 180 €</span>
+            <div id="dds_warn" style="display:none;margin-top:4px;padding:6px 10px;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;font-size:12px;color:#856404;">⚠️ Maximálna výška odpočtu je 180 €. Suma bola automaticky znížená na 180 €.</div>
           </div>
           <div class="field">
             <label>NČZD na manžel/ku (€) – r.31</label>
@@ -953,6 +954,19 @@ function calc5() {
     <div class="computed-row"><span class="computed-label">ČZD §5 (r.38)</span><span class="computed-value highlight">${fmt(czd_5)}</span></div>
   `;
   calc();
+}
+
+// ——— DDS VALIDATION ———
+function validateDDS() {
+  const el = document.getElementById('iii_pilier');
+  const warn = document.getElementById('dds_warn');
+  const val = parseFloat(el.value) || 0;
+  if(val > 180) {
+    el.value = 180;
+    if(warn) warn.style.display = 'block';
+  } else {
+    if(warn) warn.style.display = 'none';
+  }
 }
 
 // ——— MAIN CALC ———
