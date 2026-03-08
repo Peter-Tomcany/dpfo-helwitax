@@ -618,24 +618,27 @@
         <hr class="divider">
 
         <div class="sub-header section-header" style="background:rgba(62,207,142,.06)">
-          <span class="section-tag" style="background:rgba(62,207,142,.15)">ODVODY</span>
-          <span class="section-title" style="font-size:12px">Zaplatené poistné – pod Tab.1 / Príloha č.4</span>
+          <span class="section-tag" style="background:rgba(62,207,142,.15)">ODVODY SČZO</span>
+          <span class="section-title" style="font-size:12px">Zaplatené poistné pod Tab.1 / Príloha č.4</span>
+        </div>
+        <div style="margin-top:8px;margin-bottom:8px;padding:8px 12px;background:rgba(62,207,142,.06);border-radius:8px;font-size:11.5px;color:#555;line-height:1.5">
+          Nasledujúce polia sa týkajú odvodov, ktoré ste ako <strong>SZČO</strong> zaplatili v roku 2025 v súvislosti s príjmami podľa § 6 (živnosť, umelecká činnosť, prenájom). Ide o údaje pre <strong>Prílohu č. 4</strong> priznania. Odvody ako zamestnanec (zrazené zamestnávateľom) sa sem <strong>neuvádzajú</strong> — tie sú už zahrnuté v sekcii § 5.
         </div>
         <div class="grid grid-3" style="margin-top:16px;margin-bottom:16px">
           <div class="field">
-            <label>ZP zaplatené celkom 2025 (€) – r.13</label>
+            <label>ZP zaplatené celkom 2025 (€) – Príl.4 r.13</label>
             <input type="number" id="zdravotne" value="0" min="0" step="0.01" oninput="calc()">
             <span class="field-note">Celkové preukázateľne zaplatené ZP (vrátane ročného vyrovnania)</span>
           </div>
           <div class="field">
-            <label>ZP preddavky zaplatené 2025 (€) – r.14</label>
+            <label>ZP preddavky zaplatené 2025 (€) – Príl.4 r.14</label>
             <input type="number" id="zdravotne_pred" value="0" min="0" step="0.01" oninput="calc()">
             <span class="field-note">Iba preddavky na ZP zaplatené v roku 2025 (r.14 ≤ r.13)</span>
           </div>
           <div class="field">
-            <label>Sociálne poistenie zaplatené 2025 (€) – r.11</label>
+            <label>SOCP zaplatené 2025 (€) – Príl.4 r.11</label>
             <input type="number" id="socialne" value="0" min="0" step="0.01" oninput="calc()">
-            <span class="field-note">Poistné SP zaplatené v roku 2025</span>
+            <span class="field-note">Sociálne poistenie zaplatené v roku 2025</span>
           </div>
         </div>
         <div id="vysledok_prijmy" style="margin-top:8px"></div>
@@ -1190,9 +1193,9 @@ function calc() {
     <div class="computed-row"><span class="computed-label">Výdavky §6 (paušál + odvody)</span><span class="computed-value">${fmt(celk_vydavky_6)}</span></div>
     <div class="computed-row"><span class="computed-label">ČZD §6 ods.1+2 (r.55)</span><span class="computed-value highlight">${fmt(czd_6)}</span></div>
     ${czd_6_34 > 0 ? `<div class="computed-row"><span class="computed-label">ČZD §6 ods.3+4 (r.60)</span><span class="computed-value highlight">${fmt(czd_6_34)}</span></div>` : ''}
-    <div class="computed-row"><span class="computed-label">Príl.č.4 r.11 – SP zaplatené (§6)</span><span class="computed-value">${fmt(socialne)}</span></div>
-    <div class="computed-row"><span class="computed-label">Príl.č.4 r.13 – ZP zaplatené (§6)</span><span class="computed-value">${fmt(zdravotne)}</span></div>
-    <div class="computed-row"><span class="computed-label">Príl.č.4 r.14 – preddavky ZP (§6)</span><span class="computed-value">${fmt(zdravotne_pred)}</span></div>
+    <div class="computed-row"><span class="computed-label">Príl.4 r.11 – SOCP zaplatené</span><span class="computed-value">${fmt(socialne)}</span></div>
+    <div class="computed-row"><span class="computed-label">Príl.4 r.13 – ZP zaplatené</span><span class="computed-value">${fmt(zdravotne)}</span></div>
+    <div class="computed-row"><span class="computed-label">Príl.4 r.14 – ZP preddavky</span><span class="computed-value">${fmt(zdravotne_pred)}</span></div>
   `;
 
   // Live feedback on odpočty page
@@ -1241,9 +1244,9 @@ function buildSummary() {
     ${C.czd_6_34 > 0 ? `
     <tr><td>r.60</td><td>ČZD §6 ods.3+4</td><td>${fmt(C.czd_6_34)}</td></tr>
     ` : ''}
-    <tr><td>Príl.4 r.11</td><td>Sociálne poistenie §6</td><td>${fmt(C.socialne)}</td></tr>
-    <tr><td>Príl.4 r.13</td><td>Zdravotné poistenie §6 (celkom)</td><td>${fmt(C.zdravotne)}</td></tr>
-    <tr><td>Príl.4 r.14</td><td>ZP §6 – preddavky</td><td>${fmt(C.zdravotne_pred || 0)}</td></tr>
+    <tr><td>Príl.4 r.11</td><td>SOCP zaplatené (SZČO)</td><td>${fmt(C.socialne)}</td></tr>
+    <tr><td>Príl.4 r.13</td><td>ZP zaplatené (SZČO)</td><td>${fmt(C.zdravotne)}</td></tr>
+    <tr><td>Príl.4 r.14</td><td>ZP preddavky</td><td>${fmt(C.zdravotne_pred || 0)}</td></tr>
     <tr><td>r.55</td><td>ČZD §6 ods.1+2</td><td>${fmt(C.czd_6)}</td></tr>
     <tr class="section-sep"><td colspan="3">Nezdaniteľné časti (§11)</td></tr>
     <tr><td>r.30</td><td>NČZD na daňovníka</td><td>${fmt(C.nczd_dankovnik_suma)}</td></tr>
@@ -1659,7 +1662,7 @@ function buildXML() {
 \t<r108></r108><r109></r109><r110></r110><r111></r111>
 \t<r112></r112><r113></r113><r114></r114><r115></r115>
 \t<r116>${n2(C.dan)}</r116>
-\t<r116a>${n2(C.czd_5 + Math.max(C.czd_6, C.zd_b))}</r116a>
+\t<r116a></r116a>
 \t<r117>${C.bonus > 0 ? n2(C.bonus) : ''}</r117>
 \t<r118>${n2(C.dan_po_bonuse)}</r118>
 \t<r119></r119><r120></r120>
