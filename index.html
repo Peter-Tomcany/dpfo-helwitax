@@ -595,6 +595,28 @@
 
         <hr class="divider">
 
+        <div class="sub-header section-header" style="background:rgba(33,150,243,.06)">
+          <span class="section-tag" style="background:rgba(33,150,243,.15)">§6 ods.3</span>
+          <span class="section-title" style="font-size:12px">Príjem z prenájmu nehnuteľností – r.11 Tab.1</span>
+        </div>
+        <div style="margin-top:8px;margin-bottom:8px;padding:8px 12px;background:rgba(33,150,243,.06);border-radius:8px;font-size:11.5px;color:#555;line-height:1.5">
+          Uvádzajte <strong>kladný rozdiel</strong> medzi príjmom z prenájmu a oslobodenou sumou <strong>500 €</strong> (§9 ods.1 písm. g). Výdavky uvádzajte v pomere zahrnutých príjmov k celkovým príjmom. Paušálne výdavky sa pri prenájme <strong>neuplatňujú</strong> — iba preukázateľné.
+        </div>
+        <div class="grid grid-2" style="margin-top:16px;margin-bottom:16px">
+          <div class="field">
+            <label>Príjmy z prenájmu po oslobodení 500 € (€)</label>
+            <input type="number" id="p_prenajom" value="0" min="0" step="0.01" oninput="calc()">
+            <span class="field-note">Príjem − 500 € (§9 ods.1 písm. g). Ak je rozdiel záporný, uveďte 0.</span>
+          </div>
+          <div class="field">
+            <label>Preukázateľné výdavky z prenájmu (€)</label>
+            <input type="number" id="v_prenajom" value="0" min="0" step="0.01" oninput="calc()">
+            <span class="field-note">Skutočné výdavky v pomere zahrnutých príjmov k celkovým.</span>
+          </div>
+        </div>
+
+        <hr class="divider">
+
         <div class="sub-header section-header" style="background:rgba(62,207,142,.06)">
           <span class="section-tag" style="background:rgba(62,207,142,.15)">ODVODY</span>
           <span class="section-title" style="font-size:12px">Zaplatené poistné – pod Tab.1 / Príloha č.4</span>
@@ -1031,6 +1053,8 @@ function calc() {
   const p_zivnost = v('p_zivnost');
   const p_dielo = v('p_dielo');
   const p_pouzitie = v('p_pouzitie');
+  const p_prenajom = v('p_prenajom');
+  const v_prenajom = Math.min(v('v_prenajom'), p_prenajom); // výdavky max do výšky príjmov
   const zdravotne = v('zdravotne');
   const zdravotne_pred = Math.min(v('zdravotne_pred'), v('zdravotne')); // r.14 ≤ r.13
   const socialne = v('socialne');
@@ -1060,14 +1084,24 @@ function calc() {
   const celk_vydavky_12 = vydavky_zivnost + vydavky_dielo + celkove_odvody;
   let czd_6 = Math.max(0, celk_prijmy_12 - celk_vydavky_12);
 
+  // §6 ods.3 – prenájom (iba preukázateľné výdavky)
+  const celk_prijmy_3 = p_prenajom;
+  const celk_vydavky_3 = v_prenajom;
+  let czd_6_3 = Math.max(0, celk_prijmy_3 - celk_vydavky_3);
+
   // §6 ods.4 → §4a (r.58-r.65)
   const celk_prijmy_4 = p_pouzitie;
   const celk_vydavky_4 = vydavky_pouzitie;
   let czd_6_4 = Math.max(0, celk_prijmy_4 - celk_vydavky_4);
 
+  // §6 ods.3+4 spolu (r.13 Tab.1 → r.58/r.59/r.60)
+  const celk_prijmy_34 = celk_prijmy_3 + celk_prijmy_4;   // r.13 s1 = r.11 + r.12
+  const celk_vydavky_34 = Math.min(celk_prijmy_34, celk_vydavky_3 + celk_vydavky_4); // r.13 s2
+  let czd_6_34 = Math.max(0, celk_prijmy_34 - celk_vydavky_34); // r.60
+
   // Celkové §6
-  const celk_prijmy_6 = celk_prijmy_12 + celk_prijmy_4;
-  const celk_vydavky_6 = celk_vydavky_12 + celk_vydavky_4;
+  const celk_prijmy_6 = celk_prijmy_12 + celk_prijmy_34;
+  const celk_vydavky_6 = celk_vydavky_12 + celk_vydavky_34;
 
   // Úhrn aktívnych ZD (§5 + §6 ods.1+2)
   const uhrnZD_aktivny = czd_5 + czd_6;
@@ -1098,7 +1132,7 @@ function calc() {
 
   // ——— §4 ods.1 písm. a): ZD = §5 po NČZD + §6 ods.3+4 → sadzba 19%/25% (hranica 48 441,43 €) ———
   const PASOM_A = 48441.43;
-  const zd_a = zd_5_po_nczd + czd_6_4; // §5 po NČZD + §6 ods.4
+  const zd_a = zd_5_po_nczd + czd_6_34; // §5 po NČZD + §6 ods.3+4 (r.60)
   let dan_a = zd_a <= PASOM_A ? zd_a * 0.19 : PASOM_A * 0.19 + (zd_a - PASOM_A) * 0.25;
 
   // ——— §4 ods.1 písm. b): ZD = §6 ods.1+2 po NČZD → sadzba 15% ak príjmy ≤ 100 000 €, inak 19%/25% ———
@@ -1135,10 +1169,11 @@ function calc() {
 
   // Cache
   Object.assign(C, {
-    p_zivnost, p_dielo, p_pouzitie, celk_prijmy_12, celk_prijmy_4, celk_prijmy_6,
+    p_zivnost, p_dielo, p_pouzitie, p_prenajom, v_prenajom,
+    celk_prijmy_12, celk_prijmy_3, celk_prijmy_4, celk_prijmy_34, celk_prijmy_6,
     vydavky_zivnost, vydavky_dielo, vydavky_pouzitie, celkove_odvody,
-    celk_vydavky_12, celk_vydavky_4, celk_vydavky_6,
-    czd_6, czd_6_4, czd_5, uhrnZD_aktivny,
+    celk_vydavky_12, celk_vydavky_3, celk_vydavky_4, celk_vydavky_34, celk_vydavky_6,
+    czd_6, czd_6_3, czd_6_4, czd_6_34, czd_5, uhrnZD_aktivny,
     nczd_dankovnik_suma, iii, nczd_manzel, celk_nczd,
     zd_po_nczd, dan, bonus_raw, bonus_limit, bonus,
     dan_po_bonuse, dan_na_uhradu, preplatok,
@@ -1149,10 +1184,12 @@ function calc() {
   const r1 = document.getElementById('vysledok_prijmy');
   if(r1) r1.innerHTML = `
     <div class="computed-row"><span class="computed-label">Príjmy §6 ods.1+2 (r.10)</span><span class="computed-value">${fmt(celk_prijmy_12)}</span></div>
-    ${p_pouzitie > 0 ? `<div class="computed-row"><span class="computed-label">Príjmy §6 ods.4 (r.13)</span><span class="computed-value">${fmt(celk_prijmy_4)}</span></div>` : ''}
+    ${p_prenajom > 0 ? `<div class="computed-row"><span class="computed-label">Príjmy §6 ods.3 – prenájom (r.11)</span><span class="computed-value">${fmt(p_prenajom)}</span></div>` : ''}
+    ${p_pouzitie > 0 ? `<div class="computed-row"><span class="computed-label">Príjmy §6 ods.4 – použitie diela (r.12)</span><span class="computed-value">${fmt(celk_prijmy_4)}</span></div>` : ''}
+    ${celk_prijmy_34 > 0 ? `<div class="computed-row"><span class="computed-label">Príjmy §6 ods.3+4 spolu (r.13)</span><span class="computed-value">${fmt(celk_prijmy_34)}</span></div>` : ''}
     <div class="computed-row"><span class="computed-label">Výdavky §6 (paušál + odvody)</span><span class="computed-value">${fmt(celk_vydavky_6)}</span></div>
     <div class="computed-row"><span class="computed-label">ČZD §6 ods.1+2 (r.55)</span><span class="computed-value highlight">${fmt(czd_6)}</span></div>
-    ${czd_6_4 > 0 ? `<div class="computed-row"><span class="computed-label">ČZD §6 ods.4 (r.65)</span><span class="computed-value highlight">${fmt(czd_6_4)}</span></div>` : ''}
+    ${czd_6_34 > 0 ? `<div class="computed-row"><span class="computed-label">ČZD §6 ods.3+4 (r.60)</span><span class="computed-value highlight">${fmt(czd_6_34)}</span></div>` : ''}
     <div class="computed-row"><span class="computed-label">Príl.č.4 r.11 – SP zaplatené (§6)</span><span class="computed-value">${fmt(socialne)}</span></div>
     <div class="computed-row"><span class="computed-label">Príl.č.4 r.13 – ZP zaplatené (§6)</span><span class="computed-value">${fmt(zdravotne)}</span></div>
     <div class="computed-row"><span class="computed-label">Príl.č.4 r.14 – preddavky ZP (§6)</span><span class="computed-value">${fmt(zdravotne_pred)}</span></div>
@@ -1163,8 +1200,9 @@ function calc() {
   if(r2) r2.innerHTML = `
     <div class="computed-row"><span class="computed-label">ČZD §5</span><span class="computed-value">${fmt(czd_5)}</span></div>
     <div class="computed-row"><span class="computed-label">ČZD §6 ods.1+2</span><span class="computed-value">${fmt(czd_6)}</span></div>
+    ${czd_6_34 > 0 ? `<div class="computed-row"><span class="computed-label">ČZD §6 ods.3+4 (r.60)</span><span class="computed-value">${fmt(czd_6_34)}</span></div>` : ''}
     <div class="computed-row"><span class="computed-label">NČZD celkom</span><span class="computed-value">${fmt(celk_nczd)}</span></div>
-    <div class="computed-row"><span class="computed-label">ZD §4a (§5) po NČZD → 19%/25%</span><span class="computed-value">${fmt(zd_a)}</span></div>
+    <div class="computed-row"><span class="computed-label">ZD §4a (§5 + §6 ods.3+4) po NČZD → 19%/25%</span><span class="computed-value">${fmt(zd_a)}</span></div>
     <div class="computed-row"><span class="computed-label">ZD §4b (§6 ods.1+2) po NČZD → ${sadzba_b}</span><span class="computed-value">${fmt(zd_b)}</span></div>
     <div class="computed-row"><span class="computed-label">Daň §4a (r.81)</span><span class="computed-value">${fmt(dan_a)}</span></div>
     <div class="computed-row"><span class="computed-label">Daň §4b (r.96)</span><span class="computed-value">${fmt(dan_b)}</span></div>
@@ -1192,10 +1230,16 @@ function buildSummary() {
     <tr><td>r.05</td><td>Z vytvorenia diela (§6 ods.2)</td><td>${fmt(C.p_dielo)}</td></tr>
     <tr><td>r.10</td><td>Príjmy §6 ods.1+2 spolu</td><td>${fmt(C.celk_prijmy_12)}</td></tr>
     <tr><td></td><td>Výdavky ods.1+2 (paušál + odvody)</td><td>${fmt(C.celk_vydavky_12)}</td></tr>
+    ${C.p_prenajom > 0 ? `
+    <tr><td>r.11</td><td>Prenájom nehnuteľností (§6 ods.3)</td><td>${fmt(C.p_prenajom)}</td></tr>
+    <tr><td></td><td>Výdavky ods.3 (preukázateľné)</td><td>${fmt(C.v_prenajom)}</td></tr>
+    ` : ''}
     ${C.p_pouzitie > 0 ? `
     <tr><td>r.12</td><td>Z použitia diela (§6 ods.4)</td><td>${fmt(C.p_pouzitie)}</td></tr>
     <tr><td></td><td>Výdavky ods.4 (paušál)</td><td>${fmt(C.vydavky_pouzitie)}</td></tr>
-    <tr><td>r.65</td><td>ČZD §6 ods.4</td><td>${fmt(C.czd_6_4)}</td></tr>
+    ` : ''}
+    ${C.czd_6_34 > 0 ? `
+    <tr><td>r.60</td><td>ČZD §6 ods.3+4</td><td>${fmt(C.czd_6_34)}</td></tr>
     ` : ''}
     <tr><td>Príl.4 r.11</td><td>Sociálne poistenie §6</td><td>${fmt(C.socialne)}</td></tr>
     <tr><td>Príl.4 r.13</td><td>Zdravotné poistenie §6 (celkom)</td><td>${fmt(C.zdravotne)}</td></tr>
@@ -1206,7 +1250,7 @@ function buildSummary() {
     <tr><td>r.31</td><td>NČZD na manžel/ku</td><td>${fmt(C.nczd_manzel)}</td></tr>
     <tr><td></td><td>III. pilier (max 180 €)</td><td>${fmt(C.iii)}</td></tr>
     <tr class="section-sep"><td colspan="3">Výpočet dane</td></tr>
-    <tr><td>r.78</td><td>ZD §4a (§5 + §6 ods.4 po NČZD) → 19%/25%</td><td>${fmt(C.zd_a)}</td></tr>
+    <tr><td>r.78</td><td>ZD §4a (§5 + §6 ods.3+4 po NČZD) → 19%/25%</td><td>${fmt(C.zd_a)}</td></tr>
     <tr><td>r.81</td><td>Daň zo ZD §4a</td><td>${fmt(C.dan_a)}</td></tr>
     <tr><td>r.92</td><td>ZD §4b (§6 ods.1+2 po NČZD) → ${C.sadzba_b}</td><td>${fmt(C.zd_b)}</td></tr>
     <tr><td>r.96</td><td>Daň zo ZD §4b</td><td>${fmt(C.dan_b)}</td></tr>
@@ -1512,19 +1556,22 @@ function buildXML() {
 \t\t\t<s1>${n2(C.celk_prijmy_12)}</s1>
 \t\t\t<s2>${pausalne_12 ? n2(C.vydavky_zivnost + C.vydavky_dielo + C.celkove_odvody) : ''}</s2>
 \t\t</t1r10>
-\t\t<t1r11><s1></s1><s2></s2></t1r11>
+\t\t<t1r11>
+\t\t\t<s1>${C.p_prenajom > 0 ? n2(C.p_prenajom) : ''}</s1>
+\t\t\t<s2>${C.p_prenajom > 0 ? n2(C.v_prenajom) : ''}</s2>
+\t\t</t1r11>
 \t\t<t1r12>
 \t\t\t<s1>${C.p_pouzitie > 0 ? n2(C.p_pouzitie) : ''}</s1>
 \t\t\t<s2>${C.p_pouzitie > 0 ? n2(C.vydavky_pouzitie) : ''}</s2>
 \t\t</t1r12>
 \t\t<t1r13>
-\t\t\t<s1>${C.celk_prijmy_4 > 0 ? n2(C.celk_prijmy_4) : ''}</s1>
-\t\t\t<s2>${C.celk_prijmy_4 > 0 ? n2(C.celk_vydavky_4) : ''}</s2>
+\t\t\t<s1>${C.celk_prijmy_34 > 0 ? n2(C.celk_prijmy_34) : ''}</s1>
+\t\t\t<s2>${C.celk_prijmy_34 > 0 ? n2(C.celk_vydavky_34) : ''}</s2>
 \t\t</t1r13>
 \t</tabulka1>
 \t<mikrodanovnikPar2w>0</mikrodanovnikPar2w>
 \t<vydavkyPar6ods11_ods1a2>0</vydavkyPar6ods11_ods1a2>
-\t<vydavkyPar6ods11_ods3>0</vydavkyPar6ods11_ods3>
+\t<vydavkyPar6ods11_ods3>${C.p_prenajom > 0 ? 1 : 0}</vydavkyPar6ods11_ods3>
 \t<vydavkyPar6ods11_ods4>0</vydavkyPar6ods11_ods4>
 \t<vydavkyPar6ods10_ods1a2>${pausalne_12}</vydavkyPar6ods10_ods1a2>
 \t<vydavkyPar6ods10_ods4>${pausalne_pouzitie}</vydavkyPar6ods10_ods4>
@@ -1562,8 +1609,8 @@ function buildXML() {
 \t<r55>${n2(C.czd_6)}</r55>
 \t<r56></r56>
 \t<r57>${n2(C.czd_6)}</r57>
-\t<r58>${C.celk_prijmy_4 > 0 ? n2(C.celk_prijmy_4) : ''}</r58><r59>${C.celk_prijmy_4 > 0 ? n2(C.celk_vydavky_4) : ''}</r59><r60>${C.czd_6_4 > 0 ? n2(C.czd_6_4) : ''}</r60>
-\t<r61></r61><r62></r62><r63></r63><r64></r64><r65>${C.czd_6_4 > 0 ? n2(C.czd_6_4) : ''}</r65>
+\t<r58>${C.celk_prijmy_34 > 0 ? n2(C.celk_prijmy_34) : ''}</r58><r59>${C.celk_prijmy_34 > 0 ? n2(C.celk_vydavky_34) : ''}</r59><r60>${C.czd_6_34 > 0 ? n2(C.czd_6_34) : ''}</r60>
+\t<r61></r61><r62></r62><r63></r63><r64></r64><r65>${C.czd_6_34 > 0 ? n2(C.czd_6_34) : ''}</r65>
 \t<tabulka2>
 \t\t<t2r1><s1></s1><s2></s2></t2r1><t2r2><s1></s1><s2></s2></t2r2>
 \t\t<t2r3><s1></s1><s2></s2></t2r3><t2r4><s1></s1><s2></s2></t2r4>
@@ -1755,14 +1802,20 @@ async function generatePDF() {
     ...(C.p_pouzitie > 0 ? [
     ['Z použitia diela §6 ods.4 (r.12)',fmt(C.p_pouzitie),false],
     ['Výdavky §6 ods.4',fmt(C.vydavky_pouzitie),false],
-    ['ČZD §6 ods.4 (r.65)',fmt(C.czd_6_4),true],
+    ] : []),
+    ...(C.p_prenajom > 0 ? [
+    ['Prenájom nehnuteľností §6 ods.3 (r.11)',fmt(C.p_prenajom),false],
+    ['Výdavky §6 ods.3 (preukázateľné)',fmt(C.v_prenajom),false],
+    ] : []),
+    ...(C.czd_6_34 > 0 ? [
+    ['ČZD §6 ods.3+4 (r.60)',fmt(C.czd_6_34),true],
     ] : []),
     ['NEZDANITEĽNÉ ČASTI (§11)','',true],
     ['NČZD na daňovníka (r.73)',fmt(C.nczd_dankovnik_suma),false],
     ['NČZD na manžela/ku (r.74)',fmt(C.nczd_manzel),false],
     ['III. pilier – max 180 € (r.75)',fmt(C.iii),false],
     ['VÝPOČET DANE','',true],
-    ['ZD §4a – §5 + §6/4 po NČZD (r.80)',fmt(C.zd_a),false],
+    ['ZD §4a – §5 + §6/3+4 po NČZD (r.80)',fmt(C.zd_a),false],
     ['Daň §4a – 19%/25% (r.81)',fmt(C.dan_a),false],
     ['ZD §4b – §6 ods.1+2 po NČZD (r.92)',fmt(C.zd_b),false],
     [`Daň §4b – ${C.sadzba_b} (r.96)`,fmt(C.dan_b),false],
